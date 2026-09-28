@@ -38,18 +38,10 @@ Testing/
 *.dll
 *.exe
 
-# Runtime outputs, datasets, and generated training artifacts
+# Runtime outputs and generated artifacts
 outputs/
-data/raw/
-data/*_dataset/
-data/*_gallery/
-!data/face_gallery/
-!data/face_gallery/cpp/
-!data/face_gallery/cpp/trainv5_gallery_r50.icg
 training/**/outputs/
 *.engine
-*.npz
-*.npy
 
 # Logs and temporary files
 *.log
