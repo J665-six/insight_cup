@@ -1,0 +1,73 @@
+{
+  "schema": "knife_classifier_model.v1",
+  "architecture": "PPLCNetV2_base",
+  "class_count": 10,
+  "labels": [
+    "k1",
+    "k2",
+    "k3",
+    "k4",
+    "k5",
+    "k6",
+    "k7",
+    "k8",
+    "k9",
+    "k10"
+  ],
+  "input": {
+    "color_space": "RGB",
+    "layout": "NCHW",
+    "size": [
+      224,
+      224
+    ],
+    "dtype": "float32",
+    "scale": 0.00392156862745098,
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "output_activation": "softmax",
+  "decision_defaults": {
+    "threshold": 0.5,
+    "min_margin": 0.15,
+    "calibrated_split": "val",
+    "known_class_coverage": 0.6345776031434185,
+    "known_class_matched_precision": 0.8668730650154799
+  },
+  "training": {
+    "framework": "PaddlePaddle 3.3.1",
+    "epochs": 35,
+    "selected_epoch": 32,
+    "best_validation_top1": 0.7013752460479736,
+    "best_validation_top1_epochs": [
+      20,
+      22,
+      32
+    ],
+    "selected_epoch_validation_top5": 0.91356,
+    "dataset_split_policy": "recording_group",
+    "dataset_manifest_sha256": "07a7299bb5c4fc1e7f16c1521becf6ad858c7b24836ee464ed990ca4e3b8caec",
+    "config_sha256": "0c299d0c95fea17ecca00cafcfbcd56381910045fb56cdde58dc44379dba025e",
+    "checkpoint_sha256": "07aaed7603bb96f5c15b32abef46444e70ac03e548ee954792235ed44bafdab0"
+  },
+  "upstream": {
+    "project": "PaddlePaddle/PaddleClas",
+    "branch": "release/2.6",
+    "commit": "f1233c18455b8acde4fc42ab0bea575fa06daa8e"
+  },
+  "export": {
+    "paddle_export_version": "2.6.2",
+    "paddle2onnx_version": "1.3.1",
+    "onnx_opset": 13,
+    "onnx_sha256": "2dda11c5eeaae7173c6953cabfdecb2d94b9dc75638277536de07ee3b70576ea",
+    "parity_report": "export_validation.json"
+  }
+}

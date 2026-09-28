@@ -38,24 +38,15 @@ Testing/
 *.dll
 *.exe
 
-# Runtime outputs, datasets, model weights, and training checkpoints
+# Runtime outputs, datasets, and generated training artifacts
 outputs/
 data/raw/
 data/*_dataset/
 data/*_gallery/
-models/
-training/**/output/
 training/**/outputs/
-*.pdparams
-*.pdopt
-*.pdstates
-*.onnx
 *.engine
 *.npz
 *.npy
-*.pth
-*.pt
-*.ckpt
 
 # Logs and temporary files
 *.log
@@ -65,3 +56,6 @@ training/**/outputs/
 *.swp
 *.swo
 .DS_Store
+
+# Local RK3588 network-share credentials
+tools/network/rk3588-network-share.env

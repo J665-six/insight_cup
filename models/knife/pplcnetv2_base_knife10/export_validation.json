@@ -1,0 +1,11 @@
+{
+  "schema": "paddle_onnx_parity.v1",
+  "samples": 32,
+  "dataset_split": "test",
+  "paddle_version": "2.6.2",
+  "onnxruntime_version": "1.23.2",
+  "max_absolute_error": 0.0000029206275939941406,
+  "mean_absolute_error": 0.00000016494013266310503,
+  "top1_equal": 32,
+  "top1_total": 32
+}

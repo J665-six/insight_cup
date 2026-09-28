@@ -1,0 +1,32 @@
+{
+  "schema": "insightface_face_only_models.v1",
+  "installed_at": "2026-09-24T00:34:19",
+  "source": "https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip",
+  "transport_url": "https://gh-proxy.com/https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip",
+  "source_archive_md5": "6c0e929fd3b6ab517170b732ced18c68",
+  "model_dir": "/home/j/insight_cup/models/face/models/face_only_r50",
+  "included_tasks": [
+    "detection",
+    "recognition"
+  ],
+  "excluded_tasks": [
+    "3d_landmark",
+    "face_reconstruction",
+    "liveness",
+    "attribute",
+    "face_swap"
+  ],
+  "files": [
+    {
+      "name": "det_10g.onnx",
+      "size_bytes": 16923827,
+      "sha256": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+    },
+    {
+      "name": "w600k_r50.onnx",
+      "size_bytes": 174383860,
+      "sha256": "4c06341c33c2ca1f86781dab0e829f88ad5b64be9fba56e56bc9ebdefc619e43"
+    }
+  ],
+  "license_note": "InsightFace pretrained models are licensed for non-commercial research use only by their provider."
+}
