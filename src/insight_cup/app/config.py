@@ -8,9 +8,7 @@ from typing import Any
 
 from insight_cup.paths import DATA_ROOT, MODELS_ROOT, OUTPUTS_ROOT
 
-DEFAULT_YOLO_WEIGHTS = Path(
-    "/home/j/trainv5/runs/yolo11n_trainv5_continue_latest-2/weights/best.pt"
-)
+DEFAULT_YOLO_WEIGHTS = MODELS_ROOT / "yolo" / "best.pt"
 DEFAULT_FACE_GALLERY = DATA_ROOT / "face_gallery" / "trainv5_gallery_r50.npz"
 DEFAULT_FACE_MODEL_ROOT = MODELS_ROOT / "face"
 DEFAULT_KNIFE_MODEL_DIR = (

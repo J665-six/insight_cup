@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "k1",
+      "score": 0.7225705981254578,
+      "points": [
+        [
+          399.6904296875,
+          482.12005615234375
+        ],
+        [
+          481.386962890625,
+          482.12005615234375
+        ],
+        [
+          481.386962890625,
+          551.2410278320312
+        ],
+        [
+          399.6904296875,
+          551.2410278320312
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k9",
+      "score": 0.6351324915885925,
+      "points": [
+        [
+          547.7845458984375,
+          384.090576171875
+        ],
+        [
+          618.4451904296875,
+          384.090576171875
+        ],
+        [
+          618.4451904296875,
+          462.336669921875
+        ],
+        [
+          547.7845458984375,
+          462.336669921875
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k7",
+      "score": 0.5657999515533447,
+      "points": [
+        [
+          348.56781005859375,
+          337.86273193359375
+        ],
+        [
+          396.84259033203125,
+          337.86273193359375
+        ],
+        [
+          396.84259033203125,
+          420.99969482421875
+        ],
+        [
+          348.56781005859375,
+          420.99969482421875
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000025__k7k9k1_d455_color_20260920_163223_648303_frame_000006_src_000041_000001367ms_int5.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

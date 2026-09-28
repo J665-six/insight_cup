@@ -18,9 +18,7 @@ import cv2
 from ultralytics import YOLO
 
 
-DEFAULT_WEIGHTS = Path(
-    "/home/j/trainv5/runs/yolo11n_trainv5_continue_latest-2/weights/best.pt"
-)
+DEFAULT_WEIGHTS = Path("models/yolo/best.pt")
 
 
 def names_map(names: Any) -> dict[int, str]:

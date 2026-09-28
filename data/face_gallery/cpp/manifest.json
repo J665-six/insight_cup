@@ -1,0 +1,12 @@
+{
+  "schema": "insight_cup_gallery.v1",
+  "format": "ICG1",
+  "rows": 169,
+  "dimensions": 512,
+  "labels": "f1...f10",
+  "normalization": "l2",
+  "source": "../trainv5_gallery_r50.npz",
+  "source_sha256": "fbab95c68c504c441d9581ab85f70eb6488703566f6521fd5a77a99c6e4ba455",
+  "file": "trainv5_gallery_r50.icg",
+  "sha256": "163931ca55785dd269bbf0fb43c7b90ff11b0382ebe82f661c8a4700b4021259"
+}

@@ -21,9 +21,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from insight_cup.common.crops import KNIFE_CROP_CONTEXT_SCALE, square_context_crop
 
 
-DEFAULT_WEIGHTS = Path(
-    "/home/j/trainv5/runs/yolo11n_trainv5_continue_latest-2/weights/best.pt"
-)
+DEFAULT_WEIGHTS = Path("models/yolo/best.pt")
 IMAGE_EXTS = {".bmp", ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 VIDEO_EXTS = {".avi", ".m4v", ".mkv", ".mov", ".mp4", ".webm"}
 COLORS = {

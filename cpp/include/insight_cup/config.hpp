@@ -13,7 +13,7 @@ using json = nlohmann::json;
 
 struct RuntimeConfig {
   std::string source = "realsense";
-  fs::path weights = "/home/j/trainv5/runs/yolo11n_trainv5_continue_latest-2/weights/best.onnx";
+  fs::path weights = fs::path(INSIGHT_CUP_PROJECT_ROOT) / "models/yolo/best.onnx";
   fs::path outputRoot = fs::path(INSIGHT_CUP_PROJECT_ROOT) / "outputs/runtime";
   float confidence = 0.25F;
   float iou = 0.45F;

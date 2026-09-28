@@ -1,0 +1,99 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "f2",
+      "score": 0.9309605360031128,
+      "points": [
+        [
+          384.86090087890625,
+          377.44677734375
+        ],
+        [
+          536.6044311523438,
+          377.44677734375
+        ],
+        [
+          536.6044311523438,
+          595.131103515625
+        ],
+        [
+          384.86090087890625,
+          595.131103515625
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f5",
+      "score": 0.9187497496604919,
+      "points": [
+        [
+          624.9637451171875,
+          374.8626708984375
+        ],
+        [
+          726.0728759765625,
+          374.8626708984375
+        ],
+        [
+          726.0728759765625,
+          534.90625
+        ],
+        [
+          624.9637451171875,
+          534.90625
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k4",
+      "score": 0.8023734092712402,
+      "points": [
+        [
+          553.399658203125,
+          144.347412109375
+        ],
+        [
+          658.1732177734375,
+          144.347412109375
+        ],
+        [
+          658.1732177734375,
+          250.33123779296875
+        ],
+        [
+          553.399658203125,
+          250.33123779296875
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000017__k3k4k8f2f5_d455_color_20260920_164653_797615_frame_000112_src_000791_000026367ms_int10.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280,
+  "description": ""
+}

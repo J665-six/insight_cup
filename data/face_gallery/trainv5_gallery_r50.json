@@ -1,0 +1,165 @@
+{
+  "schema": "face_gallery.v1",
+  "created_at": "2026-09-27T09:22:16",
+  "reference_dir": "/home/j/insight_cup/data/face_gallery/references_trainv5",
+  "gallery_path": "/home/j/insight_cup/data/face_gallery/trainv5_gallery_r50.npz",
+  "model": {
+    "backend": "insightface_core",
+    "upstream_commit": "7fadd420c2351d0ffa8cac403421c1a3ed733365",
+    "model_name": "face_only_r50",
+    "model_root": "/home/j/insight_cup/models/face",
+    "loaded_modules": [
+      "detection",
+      "recognition"
+    ],
+    "providers": [
+      "CPUExecutionProvider"
+    ],
+    "det_size": [
+      640,
+      640
+    ],
+    "det_thresh": 0.18,
+    "cpu_threads": 4
+  },
+  "attempted_images": 200,
+  "accepted_images": 169,
+  "identity_counts": {
+    "f1": 17,
+    "f2": 18,
+    "f3": 16,
+    "f4": 17,
+    "f5": 18,
+    "f6": 18,
+    "f7": 17,
+    "f8": 17,
+    "f9": 19,
+    "f10": 12
+  },
+  "failures": [
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f1/006_shuffle_02009__all_d455_color_20260917_230436_260378_frame_000089_src_000622_000020733ms_int9.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f1/008_shuffle_00819__f1_f4_d455_color_20260918_093141_998032_frame_000028_src_000212_000007067ms_int3.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f1/016_shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f2/003_shuffle_00637__f2_d455_color_20260918_090526_100743_frame_000120_src_000902_000030067ms_int3.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f2/010_shuffle_01153__f2_f5_f8_d455_color_20260918_093758_773465_frame_000100_src_000713_000023767ms_int9.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f3/007_shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f3/010_shuffle_00182__k3_d455_color_20260918_082849_597223_frame_000004_src_000033_000001100ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f3/014_shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f3/017_shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f4/006_shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f4/012_shuffle_00092__f1_f4_d455_color_20260918_093306_372364_frame_000056_src_000385_000012833ms_int9.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f4/019_shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f5/010_shuffle_00017__all_d455_color_20260917_231331_342206_frame_000003_src_000020_000000667ms_int10.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f5/014_shuffle_00738__f1_f4_d455_color_20260918_093021_889527_frame_000091_src_000652_000021733ms_int8.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f6/014_shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f6/015_shuffle_00290__all_d455_color_20260917_230436_260378_frame_000088_src_000617_000020567ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f7/004_shuffle_00290__all_d455_color_20260917_230436_260378_frame_000088_src_000617_000020567ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f7/012_shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f7/014_shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f8/005_shuffle_00599__f2_f5_f8_d455_color_20260918_093758_773465_frame_000162_src_001160_000038667ms_int10.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f8/009_shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f8/013_shuffle_000012__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000097_src_000648_000021600ms_int10.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f9/011_shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f10/002_shuffle_01197__f3_f6_f10_d455_color_20260918_091908_789202_frame_000209_src_001420_000047333ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f10/005_shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f10/006_shuffle_01982__f8_f10_d455_color_20260918_092643_988225_frame_000049_src_000340_000011333ms_int10.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f10/008_shuffle_01473__f2_f5_f8_d455_color_20260918_093604_648930_frame_000230_src_001635_000054500ms_int9.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f10/009_shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f10/010_shuffle_00599__f2_f5_f8_d455_color_20260918_093758_773465_frame_000162_src_001160_000038667ms_int10.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f10/012_shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
+      "reason": "no_face"
+    },
+    {
+      "path": "/home/j/insight_cup/data/face_gallery/references_trainv5/f10/014_shuffle_00948__f3_f6_f10_d455_color_20260918_091908_789202_frame_000174_src_001193_000039767ms_int10.jpg",
+      "reason": "no_face"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "k1",
+      "score": 0.6563541889190674,
+      "points": [
+        [
+          1019.48828125,
+          437.840087890625
+        ],
+        [
+          1123.821533203125,
+          437.840087890625
+        ],
+        [
+          1123.821533203125,
+          510.958740234375
+        ],
+        [
+          1019.48828125,
+          510.958740234375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k7",
+      "score": 0.636731743812561,
+      "points": [
+        [
+          92.28286743164062,
+          452.156862745098
+        ],
+        [
+          219.90196078431367,
+          452.156862745098
+        ],
+        [
+          219.90196078431367,
+          652.0428466796875
+        ],
+        [
+          92.28286743164062,
+          652.0428466796875
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k9",
+      "score": null,
+      "points": [
+        [
+          338.8562091503267,
+          418.8235294117646
+        ],
+        [
+          394.4117647058822,
+          418.8235294117646
+        ],
+        [
+          394.4117647058822,
+          524.7058823529411
+        ],
+        [
+          338.8562091503267,
+          524.7058823529411
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000049__k7k9k1_d455_color_20260920_162614_314707_frame_000088_src_000605_000020167ms_int8.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

@@ -1,0 +1,99 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "f8",
+      "score": 0.6245750784873962,
+      "points": [
+        [
+          850.5909719030838,
+          346.180357689951
+        ],
+        [
+          906.5213918249588,
+          346.180357689951
+        ],
+        [
+          906.5213918249588,
+          483.182799096201
+        ],
+        [
+          850.5909719030838,
+          483.182799096201
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f7",
+      "score": null,
+      "points": [
+        [
+          753.235294117647,
+          209.67320261437905
+        ],
+        [
+          789.8366013071893,
+          209.67320261437905
+        ],
+        [
+          789.8366013071893,
+          276.99346405228755
+        ],
+        [
+          753.235294117647,
+          276.99346405228755
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f9",
+      "score": null,
+      "points": [
+        [
+          780.6862745098039,
+          314.2483660130717
+        ],
+        [
+          815.3267973856207,
+          314.2483660130717
+        ],
+        [
+          815.3267973856207,
+          408.3660130718952
+        ],
+        [
+          780.6862745098039,
+          408.3660130718952
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000125__k5k10f6f7f8f9f10_d455_color_20260920_165901_341490_frame_000138_src_000889_000029633ms_int8.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280,
+  "description": ""
+}

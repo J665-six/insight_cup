@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "k1",
+      "score": 0.6971697807312012,
+      "points": [
+        [
+          179.59991455078125,
+          410.45556640625
+        ],
+        [
+          263.1343994140625,
+          410.45556640625
+        ],
+        [
+          263.1343994140625,
+          505.544677734375
+        ],
+        [
+          179.59991455078125,
+          505.544677734375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k9",
+      "score": null,
+      "points": [
+        [
+          923.8235294117646,
+          481.56862745098033
+        ],
+        [
+          1034.2810457516334,
+          481.56862745098033
+        ],
+        [
+          1034.2810457516334,
+          603.7908496732025
+        ],
+        [
+          923.8235294117646,
+          603.7908496732025
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k7",
+      "score": null,
+      "points": [
+        [
+          804.8692810457514,
+          438.43137254901956
+        ],
+        [
+          836.2418300653593,
+          438.43137254901956
+        ],
+        [
+          836.2418300653593,
+          507.0588235294117
+        ],
+        [
+          804.8692810457514,
+          507.0588235294117
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000047__k7k9k1_d455_color_20260920_162821_495345_frame_000023_src_000167_000005567ms_int3.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

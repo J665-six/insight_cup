@@ -1,0 +1,99 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "f10",
+      "score": 0.7498511075973511,
+      "points": [
+        [
+          570.8698120117188,
+          87.0850830078125
+        ],
+        [
+          646.0267944335938,
+          87.0850830078125
+        ],
+        [
+          646.0267944335938,
+          251.549072265625
+        ],
+        [
+          570.8698120117188,
+          251.549072265625
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k5",
+      "score": 0.4082956612110138,
+      "points": [
+        [
+          675.0983276367188,
+          278.8717360153696
+        ],
+        [
+          720.9874877929688,
+          278.8717360153696
+        ],
+        [
+          720.9874877929688,
+          314.6742262497446
+        ],
+        [
+          675.0983276367188,
+          314.6742262497446
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k10",
+      "score": 0.2819499671459198,
+      "points": [
+        [
+          675.5386352539062,
+          485.5150146484375
+        ],
+        [
+          709.5728149414062,
+          485.5150146484375
+        ],
+        [
+          709.5728149414062,
+          578.3953857421875
+        ],
+        [
+          675.5386352539062,
+          578.3953857421875
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": [],
+      "locked": true
+    }
+  ],
+  "imagePath": "shuffle_000185__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000124_src_000825_000027500ms_int5.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

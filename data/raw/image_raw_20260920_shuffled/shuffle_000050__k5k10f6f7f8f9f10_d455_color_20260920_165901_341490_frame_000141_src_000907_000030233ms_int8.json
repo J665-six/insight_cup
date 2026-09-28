@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "f7",
+      "score": 0.7381227016448975,
+      "points": [
+        [
+          697.4741821289062,
+          165.82205200195312
+        ],
+        [
+          728.4293823242188,
+          165.82205200195312
+        ],
+        [
+          728.4293823242188,
+          229.68527221679688
+        ],
+        [
+          697.4741821289062,
+          229.68527221679688
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f10",
+      "score": 0.45707377791404724,
+      "points": [
+        [
+          801.484130859375,
+          299.4534912109375
+        ],
+        [
+          866.568603515625,
+          299.4534912109375
+        ],
+        [
+          866.568603515625,
+          467.2728271484375
+        ],
+        [
+          801.484130859375,
+          467.2728271484375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f9",
+      "score": 0.37708112597465515,
+      "points": [
+        [
+          724.056884765625,
+          278.6085205078125
+        ],
+        [
+          767.4052734375,
+          278.6085205078125
+        ],
+        [
+          767.4052734375,
+          389.1014404296875
+        ],
+        [
+          724.056884765625,
+          389.1014404296875
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000050__k5k10f6f7f8f9f10_d455_color_20260920_165901_341490_frame_000141_src_000907_000030233ms_int8.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

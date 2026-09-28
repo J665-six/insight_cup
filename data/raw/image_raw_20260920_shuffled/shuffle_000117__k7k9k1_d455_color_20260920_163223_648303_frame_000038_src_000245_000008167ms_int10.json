@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "k1",
+      "score": 0.7528189420700073,
+      "points": [
+        [
+          917.4556884765625,
+          486.88739013671875
+        ],
+        [
+          989.9295654296875,
+          486.88739013671875
+        ],
+        [
+          989.9295654296875,
+          567.7359008789062
+        ],
+        [
+          917.4556884765625,
+          567.7359008789062
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k9",
+      "score": 0.7142663598060608,
+      "points": [
+        [
+          1055.645263671875,
+          375.81689453125
+        ],
+        [
+          1158.541748046875,
+          375.81689453125
+        ],
+        [
+          1158.541748046875,
+          485.3927001953125
+        ],
+        [
+          1055.645263671875,
+          485.3927001953125
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k2",
+      "score": 0.4275636076927185,
+      "points": [
+        [
+          870.6788940429688,
+          355.64410400390625
+        ],
+        [
+          911.2755737304688,
+          355.64410400390625
+        ],
+        [
+          911.2755737304688,
+          426.80169677734375
+        ],
+        [
+          870.6788940429688,
+          426.80169677734375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000117__k7k9k1_d455_color_20260920_163223_648303_frame_000038_src_000245_000008167ms_int10.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

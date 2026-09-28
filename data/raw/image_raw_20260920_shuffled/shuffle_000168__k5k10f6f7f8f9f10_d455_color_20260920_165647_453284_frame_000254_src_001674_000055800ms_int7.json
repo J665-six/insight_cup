@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "f10",
+      "score": 0.9215042591094971,
+      "points": [
+        [
+          622.5401611328125,
+          527.0701293945312
+        ],
+        [
+          693.6588134765625,
+          527.0701293945312
+        ],
+        [
+          693.6588134765625,
+          640.8766479492188
+        ],
+        [
+          622.5401611328125,
+          640.8766479492188
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k5",
+      "score": 0.8947435021400452,
+      "points": [
+        [
+          751.3126220703125,
+          590.34326171875
+        ],
+        [
+          809.4300537109375,
+          590.34326171875
+        ],
+        [
+          809.4300537109375,
+          634.6400146484375
+        ],
+        [
+          751.3126220703125,
+          634.6400146484375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f6",
+      "score": 0.3772050142288208,
+      "points": [
+        [
+          956.246337890625,
+          155.04254150390625
+        ],
+        [
+          1017.3719482421875,
+          155.04254150390625
+        ],
+        [
+          1017.3719482421875,
+          250.599365234375
+        ],
+        [
+          956.246337890625,
+          250.599365234375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000168__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000254_src_001674_000055800ms_int7.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

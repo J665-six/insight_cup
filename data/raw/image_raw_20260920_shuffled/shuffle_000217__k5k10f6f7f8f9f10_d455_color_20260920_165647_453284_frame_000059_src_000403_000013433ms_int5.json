@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "f8",
+      "score": 0.5320532917976379,
+      "points": [
+        [
+          1099.543212890625,
+          257.880615234375
+        ],
+        [
+          1179.398193359375,
+          257.880615234375
+        ],
+        [
+          1179.398193359375,
+          411.798583984375
+        ],
+        [
+          1099.543212890625,
+          411.798583984375
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k10",
+      "score": null,
+      "points": [
+        [
+          920.5555555555554,
+          160.65359477124179
+        ],
+        [
+          964.9999999999999,
+          160.65359477124179
+        ],
+        [
+          964.9999999999999,
+          216.20915032679736
+        ],
+        [
+          920.5555555555554,
+          216.20915032679736
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f9",
+      "score": null,
+      "points": [
+        [
+          1020.5555555555551,
+          482.2222222222222
+        ],
+        [
+          1066.9607843137253,
+          482.2222222222222
+        ],
+        [
+          1066.9607843137253,
+          616.8627450980392
+        ],
+        [
+          1020.5555555555551,
+          616.8627450980392
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000217__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000059_src_000403_000013433ms_int5.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

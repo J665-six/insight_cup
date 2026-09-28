@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "k7",
+      "score": 0.8668480515480042,
+      "points": [
+        [
+          192.31561279296875,
+          448.4638671875
+        ],
+        [
+          254.19671630859375,
+          448.4638671875
+        ],
+        [
+          254.19671630859375,
+          546.512939453125
+        ],
+        [
+          192.31561279296875,
+          546.512939453125
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k1",
+      "score": 0.6973183155059814,
+      "points": [
+        [
+          807.9837646484375,
+          405.8927001953125
+        ],
+        [
+          848.8494873046875,
+          405.8927001953125
+        ],
+        [
+          848.8494873046875,
+          458.0289306640625
+        ],
+        [
+          807.9837646484375,
+          458.0289306640625
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k9",
+      "score": null,
+      "points": [
+        [
+          320.5555555555555,
+          410.9803921568626
+        ],
+        [
+          365.6535947712417,
+          410.9803921568626
+        ],
+        [
+          365.6535947712417,
+          486.1437908496731
+        ],
+        [
+          320.5555555555555,
+          486.1437908496731
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000112__k7k9k1_d455_color_20260920_162649_181946_frame_000012_src_000069_000002300ms_int8.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

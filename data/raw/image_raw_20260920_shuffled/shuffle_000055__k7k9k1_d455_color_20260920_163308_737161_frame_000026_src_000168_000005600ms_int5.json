@@ -1,0 +1,69 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "k9",
+      "score": 0.8178277015686035,
+      "points": [
+        [
+          578.0977172851562,
+          351.4620361328125
+        ],
+        [
+          674.2380981445312,
+          351.4620361328125
+        ],
+        [
+          674.2380981445312,
+          400.9193115234375
+        ],
+        [
+          578.0977172851562,
+          400.9193115234375
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k7",
+      "score": 0.561690092086792,
+      "points": [
+        [
+          303.60345458984375,
+          269.1905517578125
+        ],
+        [
+          348.29718017578125,
+          269.1905517578125
+        ],
+        [
+          348.29718017578125,
+          347.1448974609375
+        ],
+        [
+          303.60345458984375,
+          347.1448974609375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000055__k7k9k1_d455_color_20260920_163308_737161_frame_000026_src_000168_000005600ms_int5.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

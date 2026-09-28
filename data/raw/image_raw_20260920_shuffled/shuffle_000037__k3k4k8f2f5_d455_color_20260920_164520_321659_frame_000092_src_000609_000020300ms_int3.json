@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "f2",
+      "score": 0.841646671295166,
+      "points": [
+        [
+          992.0430908203125,
+          464.8814697265625
+        ],
+        [
+          1140.3441162109375,
+          464.8814697265625
+        ],
+        [
+          1140.3441162109375,
+          640.9603271484375
+        ],
+        [
+          992.0430908203125,
+          640.9603271484375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f5",
+      "score": 0.8380742073059082,
+      "points": [
+        [
+          1028.20849609375,
+          163.3603515625
+        ],
+        [
+          1164.93359375,
+          163.3603515625
+        ],
+        [
+          1164.93359375,
+          367.305419921875
+        ],
+        [
+          1028.20849609375,
+          367.305419921875
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k8",
+      "score": null,
+      "points": [
+        [
+          867.6143790849671,
+          293.3333333333332
+        ],
+        [
+          913.3660130718952,
+          293.3333333333332
+        ],
+        [
+          913.3660130718952,
+          371.7647058823528
+        ],
+        [
+          867.6143790849671,
+          371.7647058823528
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000037__k3k4k8f2f5_d455_color_20260920_164520_321659_frame_000092_src_000609_000020300ms_int3.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

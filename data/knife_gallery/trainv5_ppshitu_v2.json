@@ -1,0 +1,522 @@
+{
+  "schema": "knife_feature_gallery.v1",
+  "backend": "PaddleClas PP-ShiTuV2 + Faiss IndexFlatIP",
+  "upstream_commit": "f1233c18455b8acde4fc42ab0bea575fa06daa8e",
+  "model": "/home/j/insight_cup/models/knife/ppshitu_v2_retrieval/inference.onnx",
+  "model_sha256": "ec7a0131ab31c639a444d9b5d3efec28adb5fb0a2cfe038e1d3883ec4725af22",
+  "dataset_root": "/home/j/insight_cup/data/knife_dataset/trainv5_grouped",
+  "gallery": "/home/j/insight_cup/data/knife_gallery/trainv5_ppshitu_v2.npz",
+  "references": 2296,
+  "embedding_size": 512,
+  "label_counts": {
+    "k1": 205,
+    "k10": 264,
+    "k2": 256,
+    "k3": 211,
+    "k4": 276,
+    "k5": 262,
+    "k6": 202,
+    "k7": 229,
+    "k8": 161,
+    "k9": 230
+  },
+  "elapsed_seconds": 20.7,
+  "evaluations": {
+    "val": {
+      "images": 509,
+      "top1_accuracy": 0.54224,
+      "candidate_counts": {
+        "k1": 50,
+        "k2": 80,
+        "k3": 54,
+        "k10": 58,
+        "k9": 68,
+        "k4": 25,
+        "k6": 68,
+        "k8": 22,
+        "k5": 44,
+        "k7": 40
+      },
+      "score_quantiles": {
+        "0.0": 0.513006,
+        "0.1": 0.734325,
+        "0.5": 0.820909,
+        "0.9": 0.883586,
+        "1.0": 0.948465
+      },
+      "margin_quantiles": {
+        "0.0": 5.9e-05,
+        "0.1": 0.003707,
+        "0.5": 0.025307,
+        "0.9": 0.079617,
+        "1.0": 0.234006
+      },
+      "operating_points": [
+        {
+          "threshold": 0.4,
+          "min_margin": 0.0,
+          "coverage": 1.0,
+          "accepted_precision": 0.54224
+        },
+        {
+          "threshold": 0.4,
+          "min_margin": 0.01,
+          "coverage": 0.744597,
+          "accepted_precision": 0.617414
+        },
+        {
+          "threshold": 0.4,
+          "min_margin": 0.02,
+          "coverage": 0.573674,
+          "accepted_precision": 0.681507
+        },
+        {
+          "threshold": 0.4,
+          "min_margin": 0.03,
+          "coverage": 0.440079,
+          "accepted_precision": 0.741071
+        },
+        {
+          "threshold": 0.4,
+          "min_margin": 0.05,
+          "coverage": 0.259332,
+          "accepted_precision": 0.833333
+        },
+        {
+          "threshold": 0.4,
+          "min_margin": 0.1,
+          "coverage": 0.049116,
+          "accepted_precision": 0.96
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.0,
+          "coverage": 1.0,
+          "accepted_precision": 0.54224
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.01,
+          "coverage": 0.744597,
+          "accepted_precision": 0.617414
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.02,
+          "coverage": 0.573674,
+          "accepted_precision": 0.681507
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.03,
+          "coverage": 0.440079,
+          "accepted_precision": 0.741071
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.05,
+          "coverage": 0.259332,
+          "accepted_precision": 0.833333
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.1,
+          "coverage": 0.049116,
+          "accepted_precision": 0.96
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.0,
+          "coverage": 0.998035,
+          "accepted_precision": 0.543307
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.01,
+          "coverage": 0.742633,
+          "accepted_precision": 0.619048
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.02,
+          "coverage": 0.573674,
+          "accepted_precision": 0.681507
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.03,
+          "coverage": 0.440079,
+          "accepted_precision": 0.741071
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.05,
+          "coverage": 0.259332,
+          "accepted_precision": 0.833333
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.1,
+          "coverage": 0.049116,
+          "accepted_precision": 0.96
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.0,
+          "coverage": 0.962672,
+          "accepted_precision": 0.542857
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.01,
+          "coverage": 0.719057,
+          "accepted_precision": 0.620219
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.02,
+          "coverage": 0.559921,
+          "accepted_precision": 0.680702
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.03,
+          "coverage": 0.434185,
+          "accepted_precision": 0.742081
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.05,
+          "coverage": 0.255403,
+          "accepted_precision": 0.830769
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.1,
+          "coverage": 0.049116,
+          "accepted_precision": 0.96
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.0,
+          "coverage": 0.62279,
+          "accepted_precision": 0.605678
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.01,
+          "coverage": 0.483301,
+          "accepted_precision": 0.674797
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.02,
+          "coverage": 0.398821,
+          "accepted_precision": 0.724138
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.03,
+          "coverage": 0.3222,
+          "accepted_precision": 0.780488
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.05,
+          "coverage": 0.194499,
+          "accepted_precision": 0.878788
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.1,
+          "coverage": 0.043222,
+          "accepted_precision": 0.954545
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.0,
+          "coverage": 0.05501,
+          "accepted_precision": 0.5
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.01,
+          "coverage": 0.049116,
+          "accepted_precision": 0.56
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.02,
+          "coverage": 0.047151,
+          "accepted_precision": 0.541667
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.03,
+          "coverage": 0.039293,
+          "accepted_precision": 0.65
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.05,
+          "coverage": 0.02947,
+          "accepted_precision": 0.8
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.1,
+          "coverage": 0.007859,
+          "accepted_precision": 0.75
+        }
+      ]
+    },
+    "test": {
+      "images": 538,
+      "top1_accuracy": 0.767658,
+      "candidate_counts": {
+        "k1": 48,
+        "k10": 49,
+        "k3": 68,
+        "k2": 69,
+        "k6": 49,
+        "k9": 61,
+        "k5": 63,
+        "k7": 43,
+        "k4": 41,
+        "k8": 47
+      },
+      "score_quantiles": {
+        "0.0": 0.398942,
+        "0.1": 0.771716,
+        "0.5": 0.85966,
+        "0.9": 0.9259,
+        "1.0": 0.961377
+      },
+      "margin_quantiles": {
+        "0.0": 5.7e-05,
+        "0.1": 0.005325,
+        "0.5": 0.037495,
+        "0.9": 0.112816,
+        "1.0": 0.287831
+      },
+      "operating_points": [
+        {
+          "threshold": 0.4,
+          "min_margin": 0.0,
+          "coverage": 0.998141,
+          "accepted_precision": 0.769088
+        },
+        {
+          "threshold": 0.4,
+          "min_margin": 0.01,
+          "coverage": 0.827138,
+          "accepted_precision": 0.835955
+        },
+        {
+          "threshold": 0.4,
+          "min_margin": 0.02,
+          "coverage": 0.711896,
+          "accepted_precision": 0.874674
+        },
+        {
+          "threshold": 0.4,
+          "min_margin": 0.03,
+          "coverage": 0.592937,
+          "accepted_precision": 0.893417
+        },
+        {
+          "threshold": 0.4,
+          "min_margin": 0.05,
+          "coverage": 0.360595,
+          "accepted_precision": 0.943299
+        },
+        {
+          "threshold": 0.4,
+          "min_margin": 0.1,
+          "coverage": 0.128253,
+          "accepted_precision": 0.985507
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.0,
+          "coverage": 0.994424,
+          "accepted_precision": 0.771963
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.01,
+          "coverage": 0.82342,
+          "accepted_precision": 0.839729
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.02,
+          "coverage": 0.708178,
+          "accepted_precision": 0.879265
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.03,
+          "coverage": 0.589219,
+          "accepted_precision": 0.899054
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.05,
+          "coverage": 0.360595,
+          "accepted_precision": 0.943299
+        },
+        {
+          "threshold": 0.5,
+          "min_margin": 0.1,
+          "coverage": 0.128253,
+          "accepted_precision": 0.985507
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.0,
+          "coverage": 0.994424,
+          "accepted_precision": 0.771963
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.01,
+          "coverage": 0.82342,
+          "accepted_precision": 0.839729
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.02,
+          "coverage": 0.708178,
+          "accepted_precision": 0.879265
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.03,
+          "coverage": 0.589219,
+          "accepted_precision": 0.899054
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.05,
+          "coverage": 0.360595,
+          "accepted_precision": 0.943299
+        },
+        {
+          "threshold": 0.6,
+          "min_margin": 0.1,
+          "coverage": 0.128253,
+          "accepted_precision": 0.985507
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.0,
+          "coverage": 0.979554,
+          "accepted_precision": 0.779886
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.01,
+          "coverage": 0.815985,
+          "accepted_precision": 0.845103
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.02,
+          "coverage": 0.700743,
+          "accepted_precision": 0.885942
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.03,
+          "coverage": 0.583643,
+          "accepted_precision": 0.904459
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.05,
+          "coverage": 0.358736,
+          "accepted_precision": 0.948187
+        },
+        {
+          "threshold": 0.7,
+          "min_margin": 0.1,
+          "coverage": 0.128253,
+          "accepted_precision": 0.985507
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.0,
+          "coverage": 0.802974,
+          "accepted_precision": 0.840278
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.01,
+          "coverage": 0.700743,
+          "accepted_precision": 0.891247
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.02,
+          "coverage": 0.624535,
+          "accepted_precision": 0.916667
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.03,
+          "coverage": 0.52974,
+          "accepted_precision": 0.933333
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.05,
+          "coverage": 0.330855,
+          "accepted_precision": 0.960674
+        },
+        {
+          "threshold": 0.8,
+          "min_margin": 0.1,
+          "coverage": 0.122677,
+          "accepted_precision": 0.984848
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.0,
+          "coverage": 0.237918,
+          "accepted_precision": 0.953125
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.01,
+          "coverage": 0.232342,
+          "accepted_precision": 0.952
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.02,
+          "coverage": 0.224907,
+          "accepted_precision": 0.958678
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.03,
+          "coverage": 0.202602,
+          "accepted_precision": 0.972477
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.05,
+          "coverage": 0.163569,
+          "accepted_precision": 0.977273
+        },
+        {
+          "threshold": 0.9,
+          "min_margin": 0.1,
+          "coverage": 0.079926,
+          "accepted_precision": 0.976744
+        }
+      ]
+    }
+  }
+}

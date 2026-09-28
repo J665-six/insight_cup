@@ -1,0 +1,99 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "k1",
+      "score": 0.2830987572669983,
+      "points": [
+        [
+          377.6446533203125,
+          397.006591796875
+        ],
+        [
+          419.6077880859375,
+          397.006591796875
+        ],
+        [
+          419.6077880859375,
+          455.0625
+        ],
+        [
+          377.6446533203125,
+          455.0625
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k7",
+      "score": null,
+      "points": [
+        [
+          790.4901960784313,
+          420.78431372549005
+        ],
+        [
+          814.0196078431371,
+          420.78431372549005
+        ],
+        [
+          814.0196078431371,
+          473.0718954248365
+        ],
+        [
+          790.4901960784313,
+          473.0718954248365
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k9",
+      "score": null,
+      "points": [
+        [
+          834.2810457516339,
+          459.99999999999994
+        ],
+        [
+          859.7712418300653,
+          459.99999999999994
+        ],
+        [
+          859.7712418300653,
+          503.7908496732025
+        ],
+        [
+          834.2810457516339,
+          503.7908496732025
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000169__k7k9k1_d455_color_20260920_162732_770087_frame_000064_src_000418_000013933ms_int5.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280,
+  "description": ""
+}

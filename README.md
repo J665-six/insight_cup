@@ -118,7 +118,7 @@ Python `.pt` 链路的完整视频测试峰值约 `1.96 GiB`：
 
 ```bash
 ./start.sh \
-  --weights /home/j/trainv5/runs/yolo11n_trainv5_continue_latest-2/weights/best.onnx \
+  --weights models/yolo/best.onnx \
   --yolo-cpu-threads 2
 ```
 
@@ -154,7 +154,7 @@ insight_cup/
 
 ## 当前模型
 
-- YOLO 默认：`/home/j/trainv5/runs/yolo11n_trainv5_continue_latest-2/weights/best.onnx`
+- YOLO 默认：`models/yolo/best.onnx`
 - 人脸检测：`models/face/models/face_only_r50/det_10g.onnx`
 - 人脸特征：`models/face/models/face_only_r50/w600k_r50.onnx`
 - 人脸库：`data/face_gallery/cpp/trainv5_gallery_r50.icg`

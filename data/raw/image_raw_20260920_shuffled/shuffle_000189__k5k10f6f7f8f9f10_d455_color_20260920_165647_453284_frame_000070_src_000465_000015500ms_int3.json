@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "f9",
+      "score": 0.715090274810791,
+      "points": [
+        [
+          996.488525390625,
+          437.8253173828125
+        ],
+        [
+          1064.8564453125,
+          437.8253173828125
+        ],
+        [
+          1064.8564453125,
+          588.1195068359375
+        ],
+        [
+          996.488525390625,
+          588.1195068359375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k10",
+      "score": 0.5781534910202026,
+      "points": [
+        [
+          854.9343872070312,
+          126.53485107421875
+        ],
+        [
+          893.0776977539062,
+          126.53485107421875
+        ],
+        [
+          893.0776977539062,
+          189.89410400390625
+        ],
+        [
+          854.9343872070312,
+          189.89410400390625
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f8",
+      "score": 0.39568567276000977,
+      "points": [
+        [
+          1046.761474609375,
+          175.25741577148438
+        ],
+        [
+          1233.419677734375,
+          175.25741577148438
+        ],
+        [
+          1233.419677734375,
+          336.5870361328125
+        ],
+        [
+          1046.761474609375,
+          336.5870361328125
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000189__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000070_src_000465_000015500ms_int3.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

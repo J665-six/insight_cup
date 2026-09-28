@@ -1,0 +1,69 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "k1",
+      "score": 0.8577208518981934,
+      "points": [
+        [
+          43.41078186035156,
+          442.82867431640625
+        ],
+        [
+          192.75143432617188,
+          442.82867431640625
+        ],
+        [
+          192.75143432617188,
+          591.1928100585938
+        ],
+        [
+          43.41078186035156,
+          591.1928100585938
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k7",
+      "score": 0.8249802589416504,
+      "points": [
+        [
+          955.2374267578125,
+          451.217041015625
+        ],
+        [
+          1034.344970703125,
+          451.217041015625
+        ],
+        [
+          1034.344970703125,
+          568.9879150390625
+        ],
+        [
+          955.2374267578125,
+          568.9879150390625
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000228__k7k9k1_d455_color_20260920_162732_770087_frame_000014_src_000096_000003200ms_int3.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

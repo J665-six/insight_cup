@@ -1,0 +1,14 @@
+[Unit]
+Description=Keep RK3588 board online through the computer Ethernet port
+
+[Service]
+Type=simple
+EnvironmentFile=-/home/j/insight_cup/tools/network/rk3588-network-share.env
+ExecStart=/usr/bin/python3 /home/j/insight_cup/tools/network/rk3588_network_share.py
+Restart=always
+RestartSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

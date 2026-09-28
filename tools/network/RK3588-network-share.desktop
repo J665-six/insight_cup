@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RK3588 Network Share
+Comment=Configure board internet through this computer
+Exec=/home/j/insight_cup/tools/network/configure-rk3588-network.sh
+Icon=network-wired
+Terminal=false
+Categories=Network;System;

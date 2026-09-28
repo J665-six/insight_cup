@@ -13,9 +13,7 @@ from typing import Any
 from ultralytics import YOLO
 
 
-DEFAULT_WEIGHTS = Path(
-    "/home/j/trainv5/runs/yolo11n_trainv5_continue_latest-2/weights/best.pt"
-)
+DEFAULT_WEIGHTS = Path("models/yolo/best.pt")
 DEFAULT_SOURCE = Path("/home/j/trainv5/images/test")
 IMAGE_EXTS = {".bmp", ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 

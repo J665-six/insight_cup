@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "f5",
+      "score": 0.8702964782714844,
+      "points": [
+        [
+          34.226654052734375,
+          150.47479248046875
+        ],
+        [
+          160.01797485351562,
+          150.47479248046875
+        ],
+        [
+          160.01797485351562,
+          271.3944091796875
+        ],
+        [
+          34.226654052734375,
+          271.3944091796875
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f2",
+      "score": 0.7215650677680969,
+      "points": [
+        [
+          299.90362548828125,
+          464.97021484375
+        ],
+        [
+          397.25689697265625,
+          464.97021484375
+        ],
+        [
+          397.25689697265625,
+          582.13671875
+        ],
+        [
+          299.90362548828125,
+          582.13671875
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "k3",
+      "score": 0.6981417536735535,
+      "points": [
+        [
+          192.34243774414062,
+          370.2757568359375
+        ],
+        [
+          293.94708251953125,
+          370.2757568359375
+        ],
+        [
+          293.94708251953125,
+          405.54052734375
+        ],
+        [
+          192.34243774414062,
+          405.54052734375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000108__k3k4k8f2f5_d455_color_20260920_164914_239437_frame_000039_src_000264_000008800ms_int10.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

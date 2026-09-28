@@ -1,0 +1,98 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "f7",
+      "score": null,
+      "points": [
+        [
+          438.85620915032655,
+          331.2418300653594
+        ],
+        [
+          623.1699346405227,
+          331.2418300653594
+        ],
+        [
+          623.1699346405227,
+          390.0653594771241
+        ],
+        [
+          438.85620915032655,
+          390.0653594771241
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f10",
+      "score": null,
+      "points": [
+        [
+          836.8954248366011,
+          431.2418300653594
+        ],
+        [
+          942.7777777777774,
+          431.2418300653594
+        ],
+        [
+          942.7777777777774,
+          486.1437908496731
+        ],
+        [
+          836.8954248366011,
+          486.1437908496731
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    },
+    {
+      "label": "f9",
+      "score": null,
+      "points": [
+        [
+          606.1764705882351,
+          401.17647058823513
+        ],
+        [
+          682.6470588235293,
+          401.17647058823513
+        ],
+        [
+          682.6470588235293,
+          448.8888888888888
+        ],
+        [
+          606.1764705882351,
+          448.8888888888888
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "shuffle_000135__k5k10f6f7f8f9f10_d455_color_20260920_165901_341490_frame_000189_src_001235_000041167ms_int10.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}
