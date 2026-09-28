@@ -1,0 +1,50 @@
+{
+  "upstream_repository": "https://github.com/PaddlePaddle/PaddleClas.git",
+  "upstream_branch": "release/2.6",
+  "upstream_commit": "f1233c18455b8acde4fc42ab0bea575fa06daa8e",
+  "license": {
+    "name": "Apache-2.0",
+    "upstream_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "vendored_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  },
+  "focused_files": {
+    "preprocess.py": {
+      "upstream_path": "deploy/python/preprocess.py",
+      "upstream_sha256": "b79c9a45035e13c77b9637b9539b4a75745603e6b478c9e46385f1c5b8e19d99",
+      "focused_sha256": "c07121c85570666e997050fa63fdce91467dd5b8919bd56bebd351ff5bc85fac",
+      "retained": [
+        "create_operators",
+        "UnifiedResize",
+        "ResizeImage",
+        "NormalizeImage",
+        "ToCHWImage"
+      ],
+      "change": "Removed unused detection, augmentation and Paddle imports; updated Pillow constants and errors."
+    },
+    "postprocess.py": {
+      "upstream_path": "deploy/python/postprocess.py",
+      "upstream_sha256": "cd8dc14c196efc23e30cc099baabaaa1e3dcd55bbf44ab1fd8f8edcd02488290",
+      "focused_sha256": "d9fdc3191b98e90b2e69e47db067545d52802a1192b9e939b228af72b21b78d8",
+      "retained": [
+        "parse_class_id_map",
+        "Topk"
+      ],
+      "change": "Removed unrelated task postprocessors and Paddle-only imports; made invalid label maps fail fast."
+    },
+    "retrieval.py": {
+      "upstream_paths": {
+        "deploy/python/predict_rec.py": "228a0b5007e56b63690f553da444966f2f22bc25c1807628546933f77cc4480f",
+        "deploy/python/build_gallery.py": "4ccfd40f2ecc1a8b357d11d049ed110a7e0ce5519d384dc206b3e1ad209c1ad2"
+      },
+      "focused_sha256": "b3c1dc291d4466ab4c58956976ce766c7d75ddba3916f226af9e0341c424c752",
+      "retained": [
+        "RecPredictor feature_normalize",
+        "GalleryBuilder IndexFlatIP semantics"
+      ],
+      "change": "Kept L2 feature normalization and Faiss flat inner-product search; removed Paddle predictor, file-list mutation, pickle IDs and unrelated index operations."
+    }
+  },
+  "training_sources": {
+    "ppcls/arch/backbone/legendary_models/pp_lcnet_v2.py": "4e89046bb6e9fe3077c1e709e2da366a374205a863b73ad44872c4de2125d980"
+  }
+}

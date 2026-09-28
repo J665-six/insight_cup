@@ -1,0 +1,30 @@
+{
+  "schema": "cpp_upstream_manifest.v1",
+  "components": [
+    {
+      "name": "insightface_face_only",
+      "repository": "https://github.com/deepinsight/insightface.git",
+      "commit": "7fadd420c2351d0ffa8cac403421c1a3ed733365",
+      "license": "../src/insight_cup/vendor/insightface_core/LICENSE",
+      "implementation": "src/models.cpp",
+      "features": ["SCRFD", "ArcFace", "five_point_alignment"]
+    },
+    {
+      "name": "paddleclas_recognition_only",
+      "repository": "https://github.com/PaddlePaddle/PaddleClas.git",
+      "commit": "f1233c18455b8acde4fc42ab0bea575fa06daa8e",
+      "license": "../src/insight_cup/vendor/paddleclas_core/LICENSE",
+      "implementation": "src/models.cpp",
+      "features": ["PPLCNetV2_classification", "PP-ShiTuV2_retrieval"]
+    }
+  ],
+  "excluded": [
+    "3d_face",
+    "liveness",
+    "face_swap",
+    "face_attributes",
+    "paddleclas_training_runtime",
+    "paddleclas_serving",
+    "paddleclas_mobile"
+  ]
+}

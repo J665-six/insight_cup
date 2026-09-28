@@ -1,0 +1,27 @@
+{
+  "upstream_repository": "https://github.com/deepinsight/insightface.git",
+  "upstream_tag": "model-zoo",
+  "upstream_commit": "7fadd420c2351d0ffa8cac403421c1a3ed733365",
+  "unchanged_files": {
+    "model_zoo/arcface_onnx.py": "89041694a9c2ec9f84c506797a810b5dc95ab57f89407de541de62a6fea981a9",
+    "model_zoo/scrfd.py": "8898d1f90690d46bee371e1de31d1af60837988272a5eef904c5ba89e0fb8d83",
+    "utils/constant.py": "80ff5522de01541547fde9a7a3c3de3f6972046b2e81cfac1d77e334c3394911",
+    "utils/download.py": "ba6f81bd7241394b7128a937df94e930e96021bf2342b55144f77c90e6d4cdba",
+    "utils/face_align.py": "a8b34ddd06716f5ca7e7501415cbd3789ccbce18db9e557b35e537695290d922",
+    "utils/storage.py": "788dbcec70283344419d82e48346656577e420ff3934c154c111e08c709f9866"
+  },
+  "minimally_modified_files": {
+    "app/common.py": {
+      "upstream_sha256": "c27ec610d16cdb459da661fe1ea16a4db01ead145b0e65906432585215d56468",
+      "change": "Removed the unused gender/sex convenience property."
+    },
+    "app/face_analysis.py": {
+      "upstream_sha256": "759271af722dafa1f602354550cdfd84cd705de0184a63b43752982635bcf5ff",
+      "change": "Removed attribute and 3D drawing branches."
+    },
+    "model_zoo/model_zoo.py": {
+      "upstream_sha256": "6900612ac9b1f1397cf7011247f2029a69b877a7f3c7cfe91494fbd280d54ba2",
+      "change": "Restricted imports and routing to SCRFD and 512-D ArcFace; forwards caller-provided ONNX Runtime session options."
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "schema": "temporal_smoothing_evaluation.v1",
+  "source": "/home/j/knife_recording/all_d455_color_20260917_231331_342206.mp4",
+  "processed_frames_per_run": 2569,
+  "knife_mode": "classification",
+  "configuration": {
+    "window_size": 3,
+    "switch_confirmations": 2,
+    "stage2_refresh_frames": 10
+  },
+  "metric_definitions": {
+    "confirmed_label_switch_rate": "Label changes between consecutive matched decisions on the same track; lower is better.",
+    "display_switch_rate": "Changes in the rendered matched/candidate/status token on the same track; lower is better.",
+    "coverage": "Fraction of fresh stage-2 events emitted as matched.",
+    "track_majority_precision": "Agreement with the majority raw YOLO subclass on each track; this is a proxy, not manual ground truth."
+  },
+  "runs": {
+    "none": {
+      "session_id": "temporal_eval_none",
+      "elapsed_seconds": 133,
+      "face": {
+        "events": 462,
+        "output_confirmed_label_switch_rate": 0.6304,
+        "output_display_switch_rate": 0.6943,
+        "output_coverage": 0.2987,
+        "output_track_majority_precision": 0.2174
+      },
+      "knife": {
+        "events": 2740,
+        "output_confirmed_label_switch_rate": 0.2399,
+        "output_display_switch_rate": 0.6376,
+        "output_coverage": 0.4781,
+        "output_track_majority_precision": 0.5924
+      }
+    },
+    "mean": {
+      "session_id": "temporal_eval_mean",
+      "elapsed_seconds": 143,
+      "face": {
+        "events": 485,
+        "raw_confirmed_label_switch_rate": 0.7292,
+        "output_confirmed_label_switch_rate": 0.0337,
+        "output_display_switch_rate": 0.4364,
+        "raw_coverage": 0.3052,
+        "output_coverage": 0.3588,
+        "raw_track_majority_precision": 0.2162,
+        "output_track_majority_precision": 0.2299
+      },
+      "knife": {
+        "events": 2742,
+        "raw_confirmed_label_switch_rate": 0.2404,
+        "output_confirmed_label_switch_rate": 0.0385,
+        "output_display_switch_rate": 0.2826,
+        "raw_coverage": 0.4763,
+        "output_coverage": 0.5117,
+        "raw_track_majority_precision": 0.6018,
+        "output_track_majority_precision": 0.6151
+      }
+    },
+    "vote": {
+      "session_id": "temporal_eval_vote",
+      "elapsed_seconds": 143,
+      "face": {
+        "events": 476,
+        "raw_confirmed_label_switch_rate": 0.5778,
+        "output_confirmed_label_switch_rate": 0.0133,
+        "output_display_switch_rate": 0.4444,
+        "raw_coverage": 0.3004,
+        "output_coverage": 0.3466,
+        "raw_track_majority_precision": 0.2517,
+        "output_track_majority_precision": 0.2545
+      },
+      "knife": {
+        "events": 2735,
+        "raw_confirmed_label_switch_rate": 0.2396,
+        "output_confirmed_label_switch_rate": 0.0385,
+        "output_display_switch_rate": 0.2828,
+        "raw_coverage": 0.4786,
+        "output_coverage": 0.5141,
+        "raw_track_majority_precision": 0.6012,
+        "output_track_majority_precision": 0.6145
+      }
+    }
+  },
+  "decision": {
+    "default_method": "vote",
+    "reason": "Knife stability was tied while vote produced fewer confirmed face-label switches. Mean remains available for comparison.",
+    "accuracy_note": "The stress video has no frame-level manual labels. This report evaluates temporal stability and proxy agreement, not true recognition accuracy."
+  }
+}

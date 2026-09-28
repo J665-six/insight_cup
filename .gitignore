@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+htmlcov/
+.coverage
+.coverage.*
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# Virtual environments and local config
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+env/
+
+# C/C++ and CMake build artifacts
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+Testing/
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Runtime outputs, datasets, model weights, and training checkpoints
+outputs/
+data/raw/
+data/*_dataset/
+data/*_gallery/
+models/
+training/**/output/
+training/**/outputs/
+*.pdparams
+*.pdopt
+*.pdstates
+*.onnx
+*.engine
+*.npz
+*.npy
+*.pth
+*.pt
+*.ckpt
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+.DS_Store

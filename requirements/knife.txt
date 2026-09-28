@@ -1,0 +1,7 @@
+# Runtime dependencies. PaddlePaddle is needed only in the isolated training environment.
+onnxruntime>=1.15
+onnx>=1.14
+opencv-python>=4.8
+numpy>=1.23
+PyYAML>=6
+Pillow>=9

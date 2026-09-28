@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Insight Cup 识别调试台</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-block">
+      <div class="brand-mark" aria-hidden="true">IC</div>
+      <div class="brand-copy">
+        <h1>识别调试台</h1>
+        <p id="sourceText">正在读取运行源</p>
+      </div>
+    </div>
+    <div class="run-actions">
+      <div class="run-state" id="runState" data-state="starting">
+        <span class="state-light" aria-hidden="true"></span>
+        <span id="runStateText">启动中</span>
+      </div>
+      <div class="control-group" aria-label="运行控制">
+        <button class="icon-button" id="resumeButton" type="button" title="继续" aria-label="继续" disabled>
+          <span aria-hidden="true">&#9654;</span>
+        </button>
+        <button class="icon-button" id="pauseButton" type="button" title="暂停" aria-label="暂停" disabled>
+          <span aria-hidden="true">&#10074;&#10074;</span>
+        </button>
+        <button class="icon-button danger" id="stopButton" type="button" title="停止" aria-label="停止" disabled>
+          <span aria-hidden="true">&#9632;</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="metric-strip" aria-label="实时运行指标">
+      <div class="metric">
+        <span class="metric-label">处理帧</span>
+        <strong id="processedFrames">0</strong>
+      </div>
+      <div class="metric">
+        <span class="metric-label">实时 FPS</span>
+        <strong id="fpsValue">0.00</strong>
+      </div>
+      <div class="metric">
+        <span class="metric-label">总耗时</span>
+        <strong><span id="latencyValue">0.0</span><small> ms</small></strong>
+      </div>
+      <div class="metric major-b0">
+        <span class="metric-label">b0</span>
+        <strong id="b0Count">0</strong>
+      </div>
+      <div class="metric major-f">
+        <span class="metric-label">f</span>
+        <strong id="fCount">0</strong>
+      </div>
+      <div class="metric major-k">
+        <span class="metric-label">k</span>
+        <strong id="kCount">0</strong>
+      </div>
+    </section>
+
+    <section class="workbench">
+      <div class="viewer-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>实时标注画面</h2>
+            <span id="frameLabel">帧 -</span>
+          </div>
+          <span class="detection-badge"><strong id="frameDetectionCount">0</strong> 个目标</span>
+        </div>
+        <div class="video-stage">
+          <img id="liveFrame" alt="实时识别标注画面">
+          <div class="video-placeholder" id="videoPlaceholder">
+            <span class="loader" aria-hidden="true"></span>
+            <span id="placeholderText">模型初始化中</span>
+          </div>
+        </div>
+        <div class="timing-bar">
+          <span>YOLO <strong id="yoloTiming">0.0 ms</strong></span>
+          <span>二阶段 <strong id="stage2Timing">0.0 ms</strong></span>
+          <span>会话 <strong id="sessionId">-</strong></span>
+        </div>
+      </div>
+
+      <aside class="diagnostics">
+        <section class="diagnostic-section">
+          <div class="section-heading">
+            <h2>信息传递</h2>
+            <span>当前正式链路</span>
+          </div>
+          <div class="flow-root">
+            <div class="flow-node source-node">
+              <span class="node-kicker">STAGE 1</span>
+              <strong>YOLO</strong>
+              <small>框 + 大类 + 置信度</small>
+            </div>
+            <span class="flow-arrow" aria-hidden="true">&#8595;</span>
+            <div class="flow-node router-node">
+              <span class="node-kicker">ROUTER</span>
+              <strong>b0 / f / k</strong>
+              <small>不传递 YOLO 细分类</small>
+            </div>
+          </div>
+          <div class="route-list">
+            <div class="route-row route-b0">
+              <span class="route-key">b0</span>
+              <span class="route-line" aria-hidden="true"></span>
+              <div><strong>直接输出</strong><small>passthrough</small></div>
+            </div>
+            <div class="route-row route-f">
+              <span class="route-key">f</span>
+              <span class="route-line" aria-hidden="true"></span>
+              <div><strong>人脸识别</strong><small>InsightFace</small></div>
+            </div>
+            <div class="route-row route-k">
+              <span class="route-key">k</span>
+              <span class="route-line" aria-hidden="true"></span>
+              <div><strong>刀具识别</strong><small>PaddleClas</small></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="diagnostic-section module-section">
+          <div class="section-heading">
+            <h2>模块状态</h2>
+            <span id="lastUpdate">--:--:--</span>
+          </div>
+          <div class="module-list">
+            <div class="module-row" id="moduleYolo">
+              <span class="module-indicator" aria-hidden="true"></span>
+              <div><strong>YOLO 检测</strong><small class="module-detail">等待加载</small></div>
+              <span class="module-status">等待</span>
+            </div>
+            <div class="module-row" id="moduleFace">
+              <span class="module-indicator" aria-hidden="true"></span>
+              <div><strong>Face 人脸</strong><small class="module-detail">等待加载</small></div>
+              <span class="module-status">等待</span>
+            </div>
+            <div class="module-row" id="moduleKnife">
+              <span class="module-indicator" aria-hidden="true"></span>
+              <div><strong>Knife 刀具</strong><small class="module-detail">等待加载</small></div>
+              <span class="module-status">等待</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="diagnostic-section result-section">
+          <div class="section-heading"><h2>二阶段结果</h2></div>
+          <div class="result-grid">
+            <div><span>matched</span><strong id="matchedCount">0</strong></div>
+            <div><span>unknown</span><strong id="unknownCount">0</strong></div>
+            <div><span>ambiguous</span><strong id="ambiguousCount">0</strong></div>
+            <div><span>no_face</span><strong id="noFaceCount">0</strong></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+
+    <section class="event-section">
+      <div class="event-heading">
+        <div>
+          <h2>最近识别事件</h2>
+          <span id="eventCount">0 条</span>
+        </div>
+        <span class="error-message" id="errorMessage" role="status"></span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>目标 ID</th>
+              <th>大类</th>
+              <th>路由</th>
+              <th>二阶段结果</th>
+              <th>分数</th>
+              <th>Margin</th>
+              <th>耗时</th>
+            </tr>
+          </thead>
+          <tbody id="eventRows">
+            <tr class="empty-row"><td colspan="8">暂无识别事件</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="/app.js" defer></script>
+</body>
+</html>
+
