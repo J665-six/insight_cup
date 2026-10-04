@@ -27,7 +27,8 @@ std::size_t elementCount(const std::vector<int64_t>& shape) {
 }  // namespace
 
 OnnxSession::OnnxSession(const fs::path& modelPath, int cpuThreads,
-                         const std::string& provider) {
+                         const std::string& provider)
+    : modelPath_(modelPath) {
   if (!fs::is_regular_file(modelPath)) {
     throw std::runtime_error("ONNX model not found: " + modelPath.string());
   }

@@ -88,7 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--stage2-workers",
         type=int,
-        default=2,
+        default=1,
         help="Concurrent workers for each face/knife stage-2 queue.",
     )
     parser.add_argument(

@@ -2,7 +2,7 @@
 
 ## 输入与会话
 
-- 输入：`/home/j/knife_recording/f2_f5_f8_d455_color_20260918_093604_648930.mp4`
+- 输入：`../knife_recording/f2_f5_f8_d455_color_20260918_093604_648930.mp4`
 - 旧基线：`outputs/runtime/f2_f5_f8_stable_test`
 - 优化默认：`outputs/runtime/f2_f5_f8_optimized_no_rotation`
 - 开启旋转补偿：`outputs/runtime/f2_f5_f8_optimized`

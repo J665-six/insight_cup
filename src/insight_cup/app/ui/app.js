@@ -94,7 +94,7 @@ function updateState(state) {
   setText(elements.f, state.major_counts?.f || 0);
   setText(elements.k, state.major_counts?.k || 0);
   setText(elements.frameLabel, state.frame_index === null ? "帧 -" : `帧 ${state.frame_index}`);
-  setText(elements.frameDetections, state.detections_in_frame || 0);
+  setText(elements.frameDetections, state.recognitions_in_frame || 0);
   setText(elements.yoloTiming, `${numberValue(state.last_timing_ms?.yolo, 1)} ms`);
   setText(elements.stage2Timing, `${numberValue(state.last_timing_ms?.stage2, 1)} ms`);
   setText(elements.session, state.session_id || "-");
@@ -138,9 +138,12 @@ function eventTime(value) {
 }
 
 function renderEvents(events) {
+  const acceptedEvents = events
+    .filter((event) => event.stage2?.accepted === true)
+    .slice(0, 40);
   elements.eventRows.replaceChildren();
-  setText(elements.eventCount, `${events.length} 条`);
-  if (!events.length) {
+  setText(elements.eventCount, `${acceptedEvents.length} 条`);
+  if (!acceptedEvents.length) {
     const row = document.createElement("tr");
     row.className = "empty-row";
     const cell = document.createElement("td");
@@ -151,7 +154,7 @@ function renderEvents(events) {
     return;
   }
 
-  for (const event of events) {
+  for (const event of acceptedEvents) {
     const row = document.createElement("tr");
     addCell(row, eventTime(event.timestamp), "mono");
     addCell(row, event.id || "-", "mono");
@@ -208,7 +211,7 @@ async function pollState() {
 
 async function pollEvents() {
   try {
-    const payload = await requestJson("/api/events?limit=40");
+    const payload = await requestJson("/api/events?limit=200");
     renderEvents(payload.events || []);
   } catch (error) {
     elements.error.textContent = error.message;

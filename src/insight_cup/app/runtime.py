@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import logging
+import os
 import re
 import statistics
 import threading
@@ -42,6 +43,13 @@ COLORS = {
 }
 
 
+def _opencv_thread_count() -> int:
+    try:
+        return max(1, int(os.environ.get("INSIGHT_CUP_OPENCV_THREADS", "1")))
+    except ValueError:
+        return 1
+
+
 def _timestamp() -> str:
     return datetime.now().astimezone().isoformat(timespec="milliseconds")
 
@@ -74,7 +82,7 @@ class RecognitionRuntime:
         journal: EventJournal,
         logger: logging.Logger,
     ) -> None:
-        cv2.setNumThreads(4)
+        cv2.setNumThreads(_opencv_thread_count())
         self.config = config
         self.session_dir = session_dir
         self.state = state

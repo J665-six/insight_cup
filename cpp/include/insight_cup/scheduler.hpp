@@ -12,7 +12,13 @@ namespace insight_cup {
 
 using RecognizeFunction =
     std::function<Stage2Decision(const Stage1Detection&)>;
-using PrepareJob = std::function<std::optional<std::string>()>;
+
+struct PreparedStage2Input {
+  cv::Mat crop;
+  std::optional<std::string> cropPath;
+};
+
+using PrepareJob = std::function<PreparedStage2Input()>;
 
 class AsyncStage2Scheduler {
  public:
@@ -28,7 +34,7 @@ class AsyncStage2Scheduler {
   AsyncStage2Scheduler& operator=(const AsyncStage2Scheduler&) = delete;
 
   std::vector<Stage2Resolution> resolveFrame(
-      const std::vector<Stage1Detection>& detections,
+      const std::vector<DetectedRegion>& regions,
       const RecognizeFunction& recognize,
       const std::vector<PrepareJob>& prepareJobs);
   bool waitForIdle(std::chrono::milliseconds timeout);

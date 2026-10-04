@@ -25,6 +25,7 @@ RuntimeState::RuntimeState(bool retainEvents, std::size_t maxEvents)
       {"fps", 0.0},
       {"last_timing_ms", {{"yolo", 0.0}, {"stage2", 0.0}, {"total", 0.0}}},
       {"detections_in_frame", 0},
+      {"recognitions_in_frame", 0},
       {"major_counts", {{"b0", 0}, {"f", 0}, {"k", 0}}},
       {"status_counts", json::object()},
       {"modules",
@@ -79,14 +80,14 @@ void RuntimeState::recordEvent(const json& event) {
   std::lock_guard<std::mutex> guard(mutex_);
   const std::string status = event.at("stage2").at("status").get<std::string>();
   ++statusCounts_[status];
-  state_["status_counts"] = statusCounts_;
   if (retainEvents_) {
+    state_["status_counts"] = statusCounts_;
     events_.push_back(event);
     while (events_.size() > maxEvents_) {
       events_.pop_front();
     }
+    changed();
   }
-  changed();
 }
 
 void RuntimeState::recordDetection(const std::string& majorClass) {
@@ -95,18 +96,26 @@ void RuntimeState::recordDetection(const std::string& majorClass) {
   }
   std::lock_guard<std::mutex> guard(mutex_);
   ++majorCounts_[majorClass];
-  state_["major_counts"] = {
-      {"b0", majorCounts_["b0"]},
-      {"f", majorCounts_["f"]},
-      {"k", majorCounts_["k"]},
-  };
-  changed();
+  if (retainEvents_) {
+    state_["major_counts"] = {
+        {"b0", majorCounts_["b0"]},
+        {"f", majorCounts_["f"]},
+        {"k", majorCounts_["k"]},
+    };
+    changed();
+  }
+}
+
+void RuntimeState::recordHeadlessFrame(int frameIndex, int processedFrames) {
+  std::lock_guard<std::mutex> guard(mutex_);
+  headlessFrameIndex_ = frameIndex;
+  headlessProcessedFrames_ = processedFrames;
 }
 
 void RuntimeState::publishFrame(const std::vector<unsigned char>& jpeg,
                                 int frameIndex, int processedFrames,
                                 double fps, const json& timingMs,
-                                int detectionCount) {
+                                int detectionCount, int recognitionCount) {
   std::lock_guard<std::mutex> guard(mutex_);
   if (!jpeg.empty()) {
     frameJpeg_ = jpeg;
@@ -117,6 +126,7 @@ void RuntimeState::publishFrame(const std::vector<unsigned char>& jpeg,
   state_["fps"] = std::round(fps * 100.0) / 100.0;
   state_["last_timing_ms"] = timingMs;
   state_["detections_in_frame"] = detectionCount;
+  state_["recognitions_in_frame"] = recognitionCount;
   state_["has_frame"] = !frameJpeg_.empty();
   changed();
 }
@@ -124,6 +134,17 @@ void RuntimeState::publishFrame(const std::vector<unsigned char>& jpeg,
 json RuntimeState::snapshot() const {
   std::lock_guard<std::mutex> guard(mutex_);
   json result = state_;
+  if (!retainEvents_) {
+    result["frame_index"] =
+        headlessFrameIndex_ >= 0 ? json(headlessFrameIndex_) : json(nullptr);
+    result["processed_frames"] = headlessProcessedFrames_;
+    result["major_counts"] = {
+        {"b0", majorCounts_.count("b0") ? majorCounts_.at("b0") : 0},
+        {"f", majorCounts_.count("f") ? majorCounts_.at("f") : 0},
+        {"k", majorCounts_.count("k") ? majorCounts_.at("k") : 0},
+    };
+    result["status_counts"] = statusCounts_;
+  }
   result["version"] = version_;
   result["paused"] = paused_;
   result["stop_requested"] = stopRequested_;

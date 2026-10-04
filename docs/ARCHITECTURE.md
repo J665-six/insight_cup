@@ -116,8 +116,15 @@ outputs/runtime/<session-id>/
   manifest.json       启动参数、模型元数据与数据链路
   events.jsonl        每个目标一行的完整识别事件
   summary.json        帧数、分类计数和最终状态
-  annotated.mp4       标注视频（视频或相机源）
-  annotated_images/   标注图片（图片源）
-  crops/f/            送入人脸模块的裁剪
-  crops/k/            送入刀具模块的方形上下文裁剪
+  shadow.jsonl        同源评估证据（仅 --shadow-log）
+  annotated.mp4       标注视频（视频或相机源，仅启用媒体输出时）
+  annotated_images/   标注图片（图片源，仅启用媒体输出时）
+  crops/f/            送入人脸模块的裁剪（可选）
+  crops/k/            送入刀具模块的方形上下文裁剪（可选）
 ```
+
+`competition` profile 只保留 manifest、正式 `events.jsonl` 和 summary，关闭 UI、预览、
+标注媒体、crop、shadow 和逐帧诊断；图片输入也不会创建 `annotated_images/`。
+`ui-recording` profile 开启 UI、预览以及标注媒体：视频或相机写 `annotated.mp4`，图片
+输入写 `annotated_images/`。它默认不保存 crop、不写 shadow，需要排障或取证时再显式
+使用 `--save-crops`、`--shadow-log`。

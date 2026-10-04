@@ -31,9 +31,10 @@ class RuntimeState {
                  const std::string& detail = std::string());
   void recordEvent(const json& event);
   void recordDetection(const std::string& majorClass);
+  void recordHeadlessFrame(int frameIndex, int processedFrames);
   void publishFrame(const std::vector<unsigned char>& jpeg, int frameIndex,
                     int processedFrames, double fps, const json& timingMs,
-                    int detectionCount);
+                    int detectionCount, int recognitionCount);
 
   json snapshot() const;
   json recentEvents(std::size_t limit) const;
@@ -58,6 +59,8 @@ class RuntimeState {
   bool stopRequested_ = false;
   bool paused_ = false;
   std::uint64_t version_ = 0;
+  int headlessFrameIndex_ = -1;
+  int headlessProcessedFrames_ = 0;
   json state_;
   std::map<std::string, std::uint64_t> majorCounts_;
   std::map<std::string, std::uint64_t> statusCounts_;

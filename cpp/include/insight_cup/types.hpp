@@ -2,6 +2,7 @@
 
 #include <array>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -34,6 +35,13 @@ struct FloatBox {
   json toJson() const { return json::array({x1, y1, x2, y2}); }
 };
 
+struct YoloDebugInfo {
+  int rawClassId = -1;
+  std::string rawClassName;
+
+  json toJson() const;
+};
+
 struct Stage1Detection {
   std::string detectionId;
   int frameIndex = 0;
@@ -45,16 +53,10 @@ struct Stage1Detection {
   json handoffJson(const std::optional<std::string>& cropPath) const;
 };
 
-struct YoloDebugInfo {
-  int rawClassId = -1;
-  std::string rawClassName;
-
-  json toJson() const;
-};
-
 struct DetectedRegion {
   Stage1Detection handoff;
   YoloDebugInfo debug;
+  std::shared_ptr<const std::map<std::string, float>> shadowClassScores;
 };
 
 struct DetectionFrame {
@@ -79,6 +81,17 @@ struct Stage2Decision {
   json toJson() const;
 };
 
+struct Stage2ShadowPayload {
+  std::shared_ptr<const std::map<std::string, float>> yoloClassScores;
+  Stage2Decision rawDecision;
+};
+
+struct Stage2Evidence {
+  Stage1Detection source;
+  YoloDebugInfo debug;
+  std::shared_ptr<const Stage2ShadowPayload> shadow;
+};
+
 struct Stage2Resolution {
   Stage2Decision decision;
   std::string mode;
@@ -87,6 +100,7 @@ struct Stage2Resolution {
   std::optional<int> cacheAgeFrames;
   std::optional<std::string> sourceDetectionId;
   std::optional<std::string> sourceCropPath;
+  std::shared_ptr<const Stage2Evidence> evidence;
 
   bool hasNewResult() const { return mode == "direct" || mode == "fresh"; }
 };

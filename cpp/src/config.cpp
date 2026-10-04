@@ -102,41 +102,74 @@ bool isVideoSource(const std::string& value) {
   return extensions.count(extension) != 0;
 }
 
-void RuntimeConfig::validate() const {
-  if (!fs::is_regular_file(weights)) {
-    throw std::runtime_error("YOLO weights not found: " + weights.string());
+std::string displayPath(const fs::path& path) {
+  if (path.empty()) {
+    return {};
   }
-  if (weights.extension() != ".onnx") {
+  const fs::path normalized =
+      path.is_absolute() ? path.lexically_normal()
+                         : fs::absolute(path).lexically_normal();
+  const fs::path projectRoot =
+      fs::absolute(fs::path(INSIGHT_CUP_PROJECT_ROOT)).lexically_normal();
+  const fs::path relative = normalized.lexically_relative(projectRoot);
+  if (!relative.empty()) {
+    return relative.generic_string();
+  }
+  return path.lexically_normal().generic_string();
+}
+
+void RuntimeConfig::validate() const {
+  requireChoice("--profile", profile,
+                {"custom", "competition", "ui-recording"});
+  if (!fs::is_regular_file(weights)) {
+    throw std::runtime_error("YOLO weights not found: " + displayPath(weights));
+  }
+  if (weights.extension() != ".onnx" && weights.extension() != ".rknn") {
     throw std::runtime_error(
-        "The native C++ runtime requires exported YOLO .onnx weights");
+        "The native C++ runtime requires YOLO .onnx or .rknn weights");
   }
   if (!fs::is_regular_file(faceGallery)) {
-    throw std::runtime_error("Face gallery not found: " + faceGallery.string());
+    throw std::runtime_error("Face gallery not found: " +
+                             displayPath(faceGallery));
   }
   const fs::path faceModelDir = faceModelRoot / "models" / faceModelName;
   for (const auto& filename : {"det_10g.onnx", "w600k_r50.onnx"}) {
     if (!fs::is_regular_file(faceModelDir / filename)) {
       throw std::runtime_error("Face model not found: " +
-                               (faceModelDir / filename).string());
+                               displayPath(faceModelDir / filename));
     }
   }
   if (knifeMode == "classification") {
     if (!fs::is_regular_file(knifeModelDir / "inference.onnx") ||
         !fs::is_regular_file(knifeModelDir / "labels.txt")) {
       throw std::runtime_error("Knife classification model is incomplete: " +
-                               knifeModelDir.string());
+                               displayPath(knifeModelDir));
     }
   } else if (knifeMode == "retrieval") {
     if (!fs::is_regular_file(knifeRetrievalModel)) {
       throw std::runtime_error("Knife retrieval model not found: " +
-                               knifeRetrievalModel.string());
+                               displayPath(knifeRetrievalModel));
     }
     if (!fs::is_regular_file(knifeGallery)) {
       throw std::runtime_error("Knife gallery not found: " +
-                               knifeGallery.string());
+                               displayPath(knifeGallery));
     }
   } else {
     throw std::runtime_error("Knife mode must be classification or retrieval");
+  }
+  if (provider == "rknn") {
+    if (knifeMode != "classification") {
+      throw std::runtime_error(
+          "RKNN currently supports knife classification mode only");
+    }
+    for (const auto& filename : {"yolo_best.rknn", "scrfd_det_10g.rknn",
+                                 "arcface_w600k_r50.rknn",
+                                 "knife_pplcnetv2.rknn"}) {
+      if (!fs::is_regular_file(rknnModelDir / filename)) {
+        throw std::runtime_error("RKNN model not found: " +
+                                 displayPath(rknnModelDir / filename));
+      }
+    }
   }
   requireRange("YOLO confidence", confidence, 0.0F, 1.0F, true);
   requireRange("YOLO IoU", iou, 0.0F, 1.0F, true);
@@ -146,6 +179,8 @@ void RuntimeConfig::validate() const {
                true);
   requireRange("Knife threshold", knifeThreshold, 0.0F, 1.0F);
   requireRange("Knife margin", knifeMinMargin, 0.0F, 1.0F);
+  requireRange("Knife minimum box area ratio", knifeMinBoxAreaRatio, 0.0F,
+               1.0F);
   requireRange("Knife retrieval threshold", knifeRetrievalThreshold, 0.0F,
                1.0F);
   requireRange("Knife retrieval margin", knifeRetrievalMinMargin, 0.0F, 1.0F);
@@ -164,24 +199,29 @@ void RuntimeConfig::validate() const {
   if (faceRotationRetryDegrees < 0.0F || faceRotationRetryDegrees > 45.0F) {
     throw std::runtime_error("Face rotation retry must be between 0 and 45 degrees");
   }
-  requireChoice("--provider", provider, {"auto", "cpu", "cuda"});
+  requireChoice("--provider", provider, {"auto", "cpu", "rknn"});
   requireChoice("--stage2-smoothing", stage2Smoothing,
                 {"none", "mean", "vote"});
+  if (startPaused && noUi) {
+    throw std::runtime_error("--start-paused requires --ui");
+  }
 }
 
 json RuntimeConfig::toJson() const {
   return {
-      {"source", source},
-      {"weights", weights.string()},
-      {"output_root", outputRoot.string()},
+      {"profile", profile},
+      {"source", displayPath(source)},
+      {"weights", displayPath(weights)},
+      {"output_root", displayPath(outputRoot)},
       {"confidence", confidence},
       {"iou", iou},
       {"image_size", imageSize},
       {"yolo_device", yoloDevice},
       {"yolo_cpu_threads", yoloCpuThreads},
       {"provider", provider},
-      {"face_gallery", faceGallery.string()},
-      {"face_model_root", faceModelRoot.string()},
+      {"rknn_model_dir", displayPath(rknnModelDir)},
+      {"face_gallery", displayPath(faceGallery)},
+      {"face_model_root", displayPath(faceModelRoot)},
       {"face_model_name", faceModelName},
       {"face_threshold", faceThreshold},
       {"face_min_margin", faceMinMargin},
@@ -190,12 +230,13 @@ json RuntimeConfig::toJson() const {
       {"face_upsample_min_side", faceUpsampleMinSide},
       {"face_cpu_threads", faceCpuThreads},
       {"face_rotation_retry_degrees", faceRotationRetryDegrees},
-      {"knife_model_dir", knifeModelDir.string()},
+      {"knife_model_dir", displayPath(knifeModelDir)},
       {"knife_mode", knifeMode},
-      {"knife_retrieval_model", knifeRetrievalModel.string()},
-      {"knife_gallery", knifeGallery.string()},
+      {"knife_retrieval_model", displayPath(knifeRetrievalModel)},
+      {"knife_gallery", displayPath(knifeGallery)},
       {"knife_threshold", knifeThreshold},
       {"knife_min_margin", knifeMinMargin},
+      {"knife_min_box_area_ratio", knifeMinBoxAreaRatio},
       {"knife_retrieval_threshold", knifeRetrievalThreshold},
       {"knife_retrieval_min_margin", knifeRetrievalMinMargin},
       {"knife_cpu_threads", knifeCpuThreads},
@@ -214,13 +255,19 @@ json RuntimeConfig::toJson() const {
       {"video_stride", videoStride},
       {"pace_video", paceVideo},
       {"max_frames", maxFrames ? json(*maxFrames) : json(nullptr)},
+      {"no_ui", noUi},
+      {"open_browser", openBrowser},
+      {"exit_on_complete", exitOnComplete},
       {"save_video", saveVideo},
       {"save_crops", saveCrops},
+      {"shadow_log", shadowLog},
       {"show_raw_label", showRawLabel},
       {"publish_preview", publishPreview},
+      {"start_paused", startPaused},
       {"jpeg_quality", jpegQuality},
       {"preview_width", previewWidth},
       {"frame_log_every", frameLogEvery},
+      {"verbose", verbose},
       {"runtime", "native_cpp17"},
   };
 }
@@ -228,9 +275,12 @@ json RuntimeConfig::toJson() const {
 ParsedCommandLine parseCommandLine(int argc, char** argv) {
   ParsedCommandLine parsed;
   RuntimeConfig& config = parsed.config;
+  std::unordered_set<std::string> explicitOptions;
+  bool profileSeen = false;
 
   for (int index = 1; index < argc; ++index) {
     auto [option, inlineValue] = splitArgument(argv[index]);
+    explicitOptions.insert(option);
     auto next = [&]() -> std::string {
       if (inlineValue) {
         std::string value = *inlineValue;
@@ -245,6 +295,12 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
 
     if (option == "-h" || option == "--help") {
       parsed.showHelp = true;
+    } else if (option == "--profile") {
+      if (profileSeen) {
+        throw std::runtime_error("--profile may only be specified once");
+      }
+      profileSeen = true;
+      config.profile = next();
     } else if (option == "--source") {
       config.source = next();
     } else if (option == "--weights") {
@@ -265,6 +321,8 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
       config.yoloCpuThreads = integerValue(option, next());
     } else if (option == "--provider") {
       config.provider = next();
+    } else if (option == "--rknn-model-dir") {
+      config.rknnModelDir = expandPath(next());
     } else if (option == "--face-gallery") {
       config.faceGallery = expandPath(next());
     } else if (option == "--face-model-root") {
@@ -297,6 +355,8 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
       config.knifeThreshold = floatValue(option, next());
     } else if (option == "--knife-min-margin") {
       config.knifeMinMargin = floatValue(option, next());
+    } else if (option == "--knife-min-area-ratio") {
+      config.knifeMinBoxAreaRatio = floatValue(option, next());
     } else if (option == "--knife-retrieval-threshold") {
       config.knifeRetrievalThreshold = floatValue(option, next());
     } else if (option == "--knife-retrieval-min-margin") {
@@ -343,16 +403,26 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
       config.noUi = false;
     } else if (option == "--no-ui") {
       config.noUi = true;
+    } else if (option == "--start-paused") {
+      config.startPaused = true;
     } else if (option == "--exit-on-complete") {
       config.exitOnComplete = true;
     } else if (option == "--open-browser") {
       config.openBrowser = true;
     } else if (option == "--no-open-browser") {
       config.openBrowser = false;
+    } else if (option == "--save-video") {
+      config.saveVideo = true;
     } else if (option == "--no-save-video") {
       config.saveVideo = false;
+    } else if (option == "--save-crops") {
+      config.saveCrops = true;
     } else if (option == "--no-save-crops") {
       config.saveCrops = false;
+    } else if (option == "--shadow-log") {
+      config.shadowLog = true;
+    } else if (option == "--no-shadow-log") {
+      config.shadowLog = false;
     } else if (option == "--show-raw-label") {
       config.showRawLabel = true;
     } else if (option == "--unthrottled-video") {
@@ -361,6 +431,46 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
       config.verbose = true;
     } else {
       throw std::runtime_error("Unknown option: " + option);
+    }
+  }
+
+  requireChoice("--profile", config.profile,
+                {"custom", "competition", "ui-recording"});
+  if (config.profile == "competition") {
+    for (const auto& forbidden : {"--ui", "--open-browser", "--save-video",
+                                  "--save-crops", "--shadow-log",
+                                  "--show-raw-label", "--start-paused",
+                                  "--verbose"}) {
+      if (explicitOptions.count(forbidden) != 0) {
+        throw std::runtime_error("--profile competition forbids " +
+                                 std::string(forbidden));
+      }
+    }
+    if (explicitOptions.count("--provider") != 0 &&
+        config.provider != "rknn") {
+      throw std::runtime_error(
+          "--profile competition requires --provider rknn");
+    }
+    config.provider = "rknn";
+    config.noUi = true;
+    config.startPaused = false;
+    config.openBrowser = false;
+    config.saveVideo = false;
+    config.saveCrops = false;
+    config.shadowLog = false;
+    config.showRawLabel = false;
+    config.verbose = false;
+  } else if (config.profile == "ui-recording") {
+    for (const auto& forbidden : {"--no-ui", "--no-save-video"}) {
+      if (explicitOptions.count(forbidden) != 0) {
+        throw std::runtime_error("--profile ui-recording forbids " +
+                                 std::string(forbidden));
+      }
+    }
+    config.noUi = false;
+    config.saveVideo = true;
+    if (explicitOptions.count("--save-crops") == 0) {
+      config.saveCrops = false;
     }
   }
 
@@ -391,23 +501,28 @@ Source and output:
   --unthrottled-video            process videos without source-FPS pacing
 
 Models:
-  --weights PATH                 YOLO ONNX model
+  --weights PATH                 YOLO ONNX or RKNN model
   --knife-mode MODE              classification or retrieval
-  --provider MODE                auto or cpu (this build is CPU-only)
+  --provider MODE                auto, rknn, or cpu (auto prefers RKNN)
+  --rknn-model-dir PATH          converted RK3588 model directory
   --conf VALUE                   YOLO confidence threshold (default 0.25)
   --iou VALUE                    YOLO NMS IoU (default 0.45)
+  --knife-min-area-ratio VALUE   reject tiny knife boxes (default disabled)
 
 Runtime:
+  --profile MODE                 custom, competition, or ui-recording
   --ui | --no-ui                 enable or disable the debug web UI
+  --start-paused                 wait for an explicit UI resume before frame one
   --host HOST --port PORT        debug UI address (default 127.0.0.1:7860)
   --no-open-browser              do not launch the browser
-  --no-save-video                skip annotated video output
-  --no-save-crops                skip stage-2 crop output
+  --save-video | --no-save-video enable or disable annotated video output
+  --save-crops | --no-save-crops enable or disable stage-2 crop output
+  --shadow-log                   write source-aligned evaluation evidence
   --verbose                      print per-frame diagnostics
   -h, --help                     show this help
 
-The remaining Python-compatible threshold, thread, camera, and temporal options
-are also accepted. See README.md for the complete command reference.
+Additional threshold, thread, camera, and temporal options are also accepted.
+See README.md for the complete command reference.
 )HELP";
 }
 

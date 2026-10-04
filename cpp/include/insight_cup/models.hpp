@@ -11,8 +11,8 @@
 
 #include "insight_cup/config.hpp"
 #include "insight_cup/gallery.hpp"
+#include "insight_cup/inference.hpp"
 #include "insight_cup/logging.hpp"
-#include "insight_cup/onnx.hpp"
 #include "insight_cup/types.hpp"
 
 namespace insight_cup {
@@ -32,6 +32,7 @@ class YoloDetector {
     float y2 = 0.0F;
     float confidence = 0.0F;
     int classId = -1;
+    std::unique_ptr<std::vector<float>> classScores;
   };
 
   std::vector<RawDetection> predict(const cv::Mat& frame) const;
@@ -39,9 +40,11 @@ class YoloDetector {
   fs::path weights_;
   float confidence_ = 0.25F;
   float iou_ = 0.45F;
+  float knifeMinBoxAreaRatio_ = 0.0F;
   int imageSize_ = 640;
   int cpuThreads_ = 1;
-  std::unique_ptr<OnnxSession> session_;
+  bool captureClassScores_ = false;
+  std::unique_ptr<InferenceSession> session_;
   std::vector<std::string> names_;
 };
 
@@ -73,8 +76,8 @@ class FaceRecognizer {
                            const std::array<cv::Point2f, 5>& keypoints) const;
   FaceAttempt recognizeOnce(const cv::Mat& crop) const;
 
-  std::unique_ptr<OnnxSession> detector_;
-  std::unique_ptr<OnnxSession> recognizer_;
+  std::unique_ptr<InferenceSession> detector_;
+  std::unique_ptr<InferenceSession> recognizer_;
   FeatureGallery gallery_;
   fs::path modelDirectory_;
   fs::path galleryPath_;
@@ -104,7 +107,7 @@ class KnifeRecognizer {
   std::string mode_;
   fs::path modelPath_;
   fs::path galleryPath_;
-  std::unique_ptr<OnnxSession> session_;
+  std::unique_ptr<InferenceSession> session_;
   std::unique_ptr<FeatureGallery> gallery_;
   std::vector<std::string> labels_;
   float threshold_ = 0.50F;

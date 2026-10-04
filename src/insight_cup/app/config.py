@@ -54,7 +54,7 @@ class RuntimeConfig:
     stage2_refresh_frames: int = 15
     stage2_stable_refresh_frames: int = 30
     stage2_cache_iou: float = 0.55
-    stage2_workers: int = 2
+    stage2_workers: int = 1
     stage2_smoothing: str = "vote"
     stage2_smoothing_window: int = 3
     stage2_switch_confirmations: int = 2

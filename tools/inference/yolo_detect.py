@@ -14,7 +14,7 @@ from ultralytics import YOLO
 
 
 DEFAULT_WEIGHTS = Path("models/yolo/best.pt")
-DEFAULT_SOURCE = Path("/home/j/trainv5/images/test")
+DEFAULT_SOURCE = Path("../trainv5/images/test")
 IMAGE_EXTS = {".bmp", ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 
 

@@ -1,0 +1,15 @@
+[Unit]
+Description=Permit NoMachine only while a physical Xorg desktop exists
+After=display-manager.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/nx-guard-physical-xorg
+ExecStopPost=-/usr/NX/bin/nxserver --stop nxd
+ExecStopPost=-/bin/systemctl stop nxserver.service
+Restart=always
+RestartSec=1s
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=multi-user.target

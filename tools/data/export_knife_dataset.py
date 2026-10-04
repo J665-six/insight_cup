@@ -48,7 +48,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Build a recording-grouped PaddleClas knife dataset."
     )
-    parser.add_argument("--data", default="/home/j/trainv5/data.yaml")
+    parser.add_argument("--data", default="../trainv5/data.yaml")
     parser.add_argument("--output", default="data/knife_dataset/trainv5_grouped")
     parser.add_argument("--seed", type=int, default=20260924)
     parser.add_argument("--val-fraction", type=float, default=0.15)

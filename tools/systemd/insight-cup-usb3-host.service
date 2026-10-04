@@ -1,0 +1,14 @@
+[Unit]
+Description=Configure the RK3588S OTG port as a USB 3 host for RealSense
+After=systemd-udev-settle.service
+Before=multi-user.target
+Conflicts=usbdevice.service
+ConditionPathExists=/sys/devices/platform/fd5d0000.syscon/fd5d0000.syscon:usb2-phy@0/otg_mode
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'printf host > /sys/devices/platform/fd5d0000.syscon/fd5d0000.syscon:usb2-phy@0/otg_mode'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

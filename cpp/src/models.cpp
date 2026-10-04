@@ -17,6 +17,11 @@
 #include <opencv2/dnn.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "insight_cup/onnx.hpp"
+#if INSIGHT_CUP_HAS_RKNN
+#include "insight_cup/rknn.hpp"
+#endif
+
 namespace insight_cup {
 
 namespace {
@@ -216,6 +221,32 @@ std::vector<std::string> loadKnifeLabels(const fs::path& path) {
   return labels;
 }
 
+std::unique_ptr<InferenceSession> createInferenceSession(
+    const fs::path& onnxPath, const fs::path& rknnPath,
+    const std::string& provider, int cpuThreads, int npuCore) {
+  const bool explicitRknnModel = onnxPath.extension() == ".rknn";
+  const fs::path selectedRknn = explicitRknnModel ? onnxPath : rknnPath;
+  bool autoRknn = false;
+#if INSIGHT_CUP_HAS_RKNN
+  autoRknn = provider == "auto" && fs::is_regular_file(selectedRknn);
+#endif
+  const bool useRknn =
+      provider == "rknn" || explicitRknnModel || autoRknn;
+  if (useRknn) {
+    if (!fs::is_regular_file(selectedRknn)) {
+      throw std::runtime_error("RKNN model not found: " +
+                               selectedRknn.string());
+    }
+#if INSIGHT_CUP_HAS_RKNN
+    return std::make_unique<RknnSession>(selectedRknn, npuCore);
+#else
+    throw std::runtime_error(
+        "This build has no RKNN Runtime support; use --provider cpu");
+#endif
+  }
+  return std::make_unique<OnnxSession>(onnxPath, cpuThreads, "cpu");
+}
+
 }  // namespace
 
 float bboxIou(const Box& left, const Box& right) {
@@ -257,13 +288,17 @@ YoloDetector::YoloDetector(const RuntimeConfig& config)
     : weights_(config.weights),
       confidence_(config.confidence),
       iou_(config.iou),
+      knifeMinBoxAreaRatio_(config.knifeMinBoxAreaRatio),
       imageSize_(config.imageSize),
       cpuThreads_(config.yoloCpuThreads),
-      session_(std::make_unique<OnnxSession>(config.weights, config.yoloCpuThreads,
-                                             config.provider)) {
+      captureClassScores_(config.shadowLog) {
   if (config.yoloDevice != "auto" && config.yoloDevice != "cpu") {
     throw std::runtime_error("Native YOLO currently supports --device auto or cpu");
   }
+  session_ = createInferenceSession(
+      config.weights, config.rknnModelDir / "yolo_best.rknn",
+      config.provider, cpuThreads_, 0);
+  weights_ = session_->modelPath();
   const auto& shape = session_->inputShape();
   if (shape.size() != 4 || shape[0] != 1 || shape[1] != 3 ||
       shape[2] != imageSize_ || shape[3] != imageSize_) {
@@ -331,13 +366,21 @@ std::vector<YoloDetector::RawDetection> YoloDetector::predict(
     if (bestScore < confidence_) {
       continue;
     }
+    std::unique_ptr<std::vector<float>> classScores;
+    if (captureClassScores_) {
+      classScores = std::make_unique<std::vector<float>>();
+      classScores->reserve(names_.size());
+      for (std::size_t classIndex = 0; classIndex < names_.size(); ++classIndex) {
+        classScores->push_back(valueAt(row, 4 + classIndex));
+      }
+    }
     const float centerX = valueAt(row, 0);
     const float centerY = valueAt(row, 1);
     const float width = valueAt(row, 2);
     const float height = valueAt(row, 3);
     candidates.push_back({centerX - width * 0.5F, centerY - height * 0.5F,
                           centerX + width * 0.5F, centerY + height * 0.5F,
-                          bestScore, bestClass});
+                          bestScore, bestClass, std::move(classScores)});
   }
 
   std::vector<RawDetection> kept;
@@ -353,8 +396,8 @@ std::vector<YoloDetector::RawDetection> YoloDetector::predict(
       return candidates[leftIndex].confidence > candidates[rightIndex].confidence;
     });
     while (!indexes.empty()) {
-      const RawDetection selected = candidates[indexes.front()];
-      kept.push_back(selected);
+      const std::size_t selectedIndex = indexes.front();
+      const RawDetection& selected = candidates[selectedIndex];
       indexes.erase(indexes.begin());
       indexes.erase(std::remove_if(indexes.begin(), indexes.end(),
                                    [&](std::size_t index) {
@@ -365,6 +408,7 @@ std::vector<YoloDetector::RawDetection> YoloDetector::predict(
                                                 candidate.x2, candidate.y2) > iou_;
                                    }),
                     indexes.end());
+      kept.push_back(std::move(candidates[selectedIndex]));
     }
   }
   std::sort(kept.begin(), kept.end(), [](const auto& leftValue,
@@ -409,6 +453,12 @@ DetectionFrame YoloDetector::detect(const cv::Mat& frame, int frameIndex) const 
     if (!bbox.valid()) {
       continue;
     }
+    const double boxAreaRatio =
+        static_cast<double>(bbox.width()) * bbox.height() /
+        (static_cast<double>(frame.cols) * frame.rows);
+    if (majorClass == "k" && boxAreaRatio < knifeMinBoxAreaRatio_) {
+      continue;
+    }
     std::ostringstream id;
     id << "frame" << std::setfill('0') << std::setw(6) << frameIndex << ":det"
        << std::setw(3) << detectionIndex;
@@ -418,13 +468,20 @@ DetectionFrame YoloDetector::detect(const cv::Mat& frame, int frameIndex) const 
     detection.majorClass = majorClass;
     detection.confidence = value.confidence;
     detection.bbox = bbox;
-    detection.crop = majorClass == "k"
-                         ? squareContextCrop(frame, bbox, 1.15F)
-                         : frame(cv::Rect(bbox.x1, bbox.y1, bbox.width(),
-                                          bbox.height()))
-                               .clone();
+    YoloDebugInfo debug{value.classId, rawName};
+    std::shared_ptr<const std::map<std::string, float>> shadowClassScores;
+    if (captureClassScores_) {
+      if (!value.classScores || value.classScores->size() != names_.size()) {
+        throw std::runtime_error("YOLO shadow scores do not match class metadata");
+      }
+      auto scores = std::make_shared<std::map<std::string, float>>();
+      for (std::size_t index = 0; index < names_.size(); ++index) {
+        (*scores)[names_[index]] = value.classScores->at(index);
+      }
+      shadowClassScores = std::move(scores);
+    }
     result.regions.push_back(
-        {std::move(detection), {value.classId, rawName}});
+        {std::move(detection), std::move(debug), std::move(shadowClassScores)});
   }
 
   std::sort(result.regions.begin(), result.regions.end(),
@@ -452,15 +509,16 @@ json YoloDetector::metadata() const {
     classes[std::to_string(index)] = names_[index];
   }
   return {
-      {"backend", "onnxruntime_cpp"},
+      {"backend", session_->backend()},
       {"weights", weights_.string()},
       {"raw_classes", classes},
       {"public_classes", {"b0", "f", "k"}},
       {"confidence", confidence_},
       {"iou", iou_},
       {"major_class_nms_iou", iou_},
+      {"knife_min_box_area_ratio", knifeMinBoxAreaRatio_},
       {"image_size", imageSize_},
-      {"device", "cpu"},
+      {"device", session_->device()},
       {"cpu_threads", cpuThreads_},
   };
 }
@@ -476,10 +534,14 @@ FaceRecognizer::FaceRecognizer(const RuntimeConfig& config)
       upsampleMinSide_(config.faceUpsampleMinSide),
       rotationRetryDegrees_(config.faceRotationRetryDegrees),
       cpuThreads_(config.faceCpuThreads) {
-  detector_ = std::make_unique<OnnxSession>(modelDirectory_ / "det_10g.onnx",
-                                            cpuThreads_, config.provider);
-  recognizer_ = std::make_unique<OnnxSession>(modelDirectory_ / "w600k_r50.onnx",
-                                              cpuThreads_, config.provider);
+  detector_ = createInferenceSession(
+      modelDirectory_ / "det_10g.onnx",
+      config.rknnModelDir / "scrfd_det_10g.rknn", config.provider,
+      cpuThreads_, 1);
+  recognizer_ = createInferenceSession(
+      modelDirectory_ / "w600k_r50.onnx",
+      config.rknnModelDir / "arcface_w600k_r50.rknn", config.provider,
+      cpuThreads_, 1);
   if (gallery_.dimensions() != 512) {
     throw std::runtime_error("Face gallery must contain 512-dimensional embeddings");
   }
@@ -716,12 +778,13 @@ Stage2Decision FaceRecognizer::recognize(const cv::Mat& crop) const {
 
 json FaceRecognizer::metadata() const {
   return {
-      {"backend", "insightface_cpp_onnx"},
+      {"backend", "insightface_cpp_" + detector_->backend()},
       {"upstream_commit", "7fadd420c2351d0ffa8cac403421c1a3ed733365"},
-      {"model_dir", modelDirectory_.string()},
+      {"detector_model", detector_->modelPath().string()},
+      {"recognizer_model", recognizer_->modelPath().string()},
       {"gallery", galleryPath_.string()},
       {"loaded_modules", {"detection", "recognition"}},
-      {"providers", {"CPUExecutionProvider"}},
+      {"device", detector_->device()},
       {"det_size", {detectionSize_, detectionSize_}},
       {"det_thresh", detectionThreshold_},
       {"cpu_threads", cpuThreads_},
@@ -754,7 +817,12 @@ KnifeRecognizer::KnifeRecognizer(const RuntimeConfig& config)
     threshold_ = config.knifeRetrievalThreshold;
     minMargin_ = config.knifeRetrievalMinMargin;
   }
-  session_ = std::make_unique<OnnxSession>(modelPath_, cpuThreads_, config.provider);
+  const fs::path rknnPath = mode_ == "classification"
+                                ? config.rknnModelDir / "knife_pplcnetv2.rknn"
+                                : fs::path();
+  session_ = createInferenceSession(modelPath_, rknnPath, config.provider,
+                                    cpuThreads_, 2);
+  modelPath_ = session_->modelPath();
 }
 
 std::vector<float> KnifeRecognizer::prepare(const cv::Mat& crop) const {
@@ -865,13 +933,14 @@ Stage2Decision KnifeRecognizer::recognize(const cv::Mat& crop) const {
 
 json KnifeRecognizer::metadata() const {
   json result = {
-      {"backend", mode_ == "classification" ? "paddleclas_cpp_onnx"
-                                               : "paddleclas_ppshitu_v2_cpp_onnx"},
+      {"backend", mode_ == "classification"
+                      ? "paddleclas_cpp_" + session_->backend()
+                      : "paddleclas_ppshitu_v2_cpp_" + session_->backend()},
       {"upstream_commit", "f1233c18455b8acde4fc42ab0bea575fa06daa8e"},
       {"model_path", modelPath_.string()},
       {"mode", mode_},
       {"labels", labels_},
-      {"providers", {"CPUExecutionProvider"}},
+      {"device", session_->device()},
       {"input_size", {224, 224}},
       {"threshold", threshold_},
       {"min_margin", minMargin_},

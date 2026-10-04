@@ -1,8 +1,8 @@
 {
   "schema": "yolo_face_references.v1",
-  "data_yaml": "/home/j/trainv5/data.yaml",
+  "data_yaml": "../trainv5/data.yaml",
   "split": "train",
-  "output_dir": "/home/j/insight_cup/data/face_gallery/references_trainv5",
+  "output_dir": "data/face_gallery/references_trainv5",
   "per_class_limit": 20,
   "identity_counts": {
     "f1": 20,
@@ -20,7 +20,7 @@
     {
       "identity": "f1",
       "reference": "f1/001_shuffle_01487__f1_f4_d455_color_20260918_093021_889527_frame_000098_src_000694_000023133ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01487__f1_f4_d455_color_20260918_093021_889527_frame_000098_src_000694_000023133ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01487__f1_f4_d455_color_20260918_093021_889527_frame_000098_src_000694_000023133ms_int3.jpg",
       "bbox_xyxy": [
         1047,
         45,
@@ -32,7 +32,7 @@
     {
       "identity": "f1",
       "reference": "f1/002_shuffle_01139__f1_f4_d455_color_20260918_093306_372364_frame_000061_src_000423_000014100ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01139__f1_f4_d455_color_20260918_093306_372364_frame_000061_src_000423_000014100ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01139__f1_f4_d455_color_20260918_093306_372364_frame_000061_src_000423_000014100ms_int10.jpg",
       "bbox_xyxy": [
         1044,
         413,
@@ -44,7 +44,7 @@
     {
       "identity": "f1",
       "reference": "f1/003_shuffle_01254__f1_f4_d455_color_20260918_092914_371991_frame_000019_src_000116_000003867ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01254__f1_f4_d455_color_20260918_092914_371991_frame_000019_src_000116_000003867ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01254__f1_f4_d455_color_20260918_092914_371991_frame_000019_src_000116_000003867ms_int8.jpg",
       "bbox_xyxy": [
         0,
         0,
@@ -56,7 +56,7 @@
     {
       "identity": "f1",
       "reference": "f1/004_shuffle_01158__f1_f4_d455_color_20260918_093215_640581_frame_000084_src_000600_000020000ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01158__f1_f4_d455_color_20260918_093215_640581_frame_000084_src_000600_000020000ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01158__f1_f4_d455_color_20260918_093215_640581_frame_000084_src_000600_000020000ms_int5.jpg",
       "bbox_xyxy": [
         1089,
         465,
@@ -68,7 +68,7 @@
     {
       "identity": "f1",
       "reference": "f1/005_shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
       "bbox_xyxy": [
         284,
         116,
@@ -80,7 +80,7 @@
     {
       "identity": "f1",
       "reference": "f1/006_shuffle_02009__all_d455_color_20260917_230436_260378_frame_000089_src_000622_000020733ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_02009__all_d455_color_20260917_230436_260378_frame_000089_src_000622_000020733ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_02009__all_d455_color_20260917_230436_260378_frame_000089_src_000622_000020733ms_int9.jpg",
       "bbox_xyxy": [
         1078,
         442,
@@ -92,7 +92,7 @@
     {
       "identity": "f1",
       "reference": "f1/007_shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
       "bbox_xyxy": [
         182,
         230,
@@ -104,7 +104,7 @@
     {
       "identity": "f1",
       "reference": "f1/008_shuffle_00819__f1_f4_d455_color_20260918_093141_998032_frame_000028_src_000212_000007067ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00819__f1_f4_d455_color_20260918_093141_998032_frame_000028_src_000212_000007067ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00819__f1_f4_d455_color_20260918_093141_998032_frame_000028_src_000212_000007067ms_int3.jpg",
       "bbox_xyxy": [
         188,
         426,
@@ -116,7 +116,7 @@
     {
       "identity": "f1",
       "reference": "f1/009_shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
       "bbox_xyxy": [
         679,
         419,
@@ -128,7 +128,7 @@
     {
       "identity": "f1",
       "reference": "f1/010_shuffle_01628__all_d455_color_20260917_230719_376025_frame_000113_src_000781_000026033ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01628__all_d455_color_20260917_230719_376025_frame_000113_src_000781_000026033ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01628__all_d455_color_20260917_230719_376025_frame_000113_src_000781_000026033ms_int8.jpg",
       "bbox_xyxy": [
         245,
         155,
@@ -140,7 +140,7 @@
     {
       "identity": "f1",
       "reference": "f1/011_shuffle_000005__k2_k6_f1_f3_f4_d455_color_20260920_163611_219286_frame_000150_src_000985_000032833ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000005__k2_k6_f1_f3_f4_d455_color_20260920_163611_219286_frame_000150_src_000985_000032833ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000005__k2_k6_f1_f3_f4_d455_color_20260920_163611_219286_frame_000150_src_000985_000032833ms_int5.jpg",
       "bbox_xyxy": [
         330,
         460,
@@ -152,7 +152,7 @@
     {
       "identity": "f1",
       "reference": "f1/012_shuffle_02142__f1_f4_d455_color_20260918_093021_889527_frame_000013_src_000105_000003500ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_02142__f1_f4_d455_color_20260918_093021_889527_frame_000013_src_000105_000003500ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_02142__f1_f4_d455_color_20260918_093021_889527_frame_000013_src_000105_000003500ms_int5.jpg",
       "bbox_xyxy": [
         301,
         246,
@@ -164,7 +164,7 @@
     {
       "identity": "f1",
       "reference": "f1/013_shuffle_00215__f1_f4_d455_color_20260918_093306_372364_frame_000071_src_000510_000017000ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00215__f1_f4_d455_color_20260918_093306_372364_frame_000071_src_000510_000017000ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00215__f1_f4_d455_color_20260918_093306_372364_frame_000071_src_000510_000017000ms_int7.jpg",
       "bbox_xyxy": [
         955,
         358,
@@ -176,7 +176,7 @@
     {
       "identity": "f1",
       "reference": "f1/014_shuffle_00465__f1_f4_d455_color_20260918_092914_371991_frame_000091_src_000618_000020600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00465__f1_f4_d455_color_20260918_092914_371991_frame_000091_src_000618_000020600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00465__f1_f4_d455_color_20260918_092914_371991_frame_000091_src_000618_000020600ms_int5.jpg",
       "bbox_xyxy": [
         1046,
         175,
@@ -188,7 +188,7 @@
     {
       "identity": "f1",
       "reference": "f1/015_shuffle_01693__f1_f4_d455_color_20260918_093215_640581_frame_000044_src_000312_000010400ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01693__f1_f4_d455_color_20260918_093215_640581_frame_000044_src_000312_000010400ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01693__f1_f4_d455_color_20260918_093215_640581_frame_000044_src_000312_000010400ms_int5.jpg",
       "bbox_xyxy": [
         934,
         553,
@@ -200,7 +200,7 @@
     {
       "identity": "f1",
       "reference": "f1/016_shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
       "bbox_xyxy": [
         440,
         92,
@@ -212,7 +212,7 @@
     {
       "identity": "f1",
       "reference": "f1/017_shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
       "bbox_xyxy": [
         676,
         279,
@@ -224,7 +224,7 @@
     {
       "identity": "f1",
       "reference": "f1/018_shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
       "bbox_xyxy": [
         297,
         231,
@@ -236,7 +236,7 @@
     {
       "identity": "f1",
       "reference": "f1/019_shuffle_01458__f1_f4_d455_color_20260918_093141_998032_frame_000085_src_000602_000020067ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01458__f1_f4_d455_color_20260918_093141_998032_frame_000085_src_000602_000020067ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01458__f1_f4_d455_color_20260918_093141_998032_frame_000085_src_000602_000020067ms_int7.jpg",
       "bbox_xyxy": [
         236,
         121,
@@ -248,7 +248,7 @@
     {
       "identity": "f1",
       "reference": "f1/020_shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
       "bbox_xyxy": [
         631,
         382,
@@ -260,7 +260,7 @@
     {
       "identity": "f2",
       "reference": "f2/001_shuffle_00063__f2_f5_f8_d455_color_20260918_093951_907387_frame_000046_src_000307_000010233ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00063__f2_f5_f8_d455_color_20260918_093951_907387_frame_000046_src_000307_000010233ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00063__f2_f5_f8_d455_color_20260918_093951_907387_frame_000046_src_000307_000010233ms_int5.jpg",
       "bbox_xyxy": [
         849,
         0,
@@ -272,7 +272,7 @@
     {
       "identity": "f2",
       "reference": "f2/002_shuffle_01910__f2_d455_color_20260918_090640_292122_frame_000068_src_000496_000016533ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01910__f2_d455_color_20260918_090640_292122_frame_000068_src_000496_000016533ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01910__f2_d455_color_20260918_090640_292122_frame_000068_src_000496_000016533ms_int8.jpg",
       "bbox_xyxy": [
         927,
         395,
@@ -284,7 +284,7 @@
     {
       "identity": "f2",
       "reference": "f2/003_shuffle_00637__f2_d455_color_20260918_090526_100743_frame_000120_src_000902_000030067ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00637__f2_d455_color_20260918_090526_100743_frame_000120_src_000902_000030067ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00637__f2_d455_color_20260918_090526_100743_frame_000120_src_000902_000030067ms_int3.jpg",
       "bbox_xyxy": [
         144,
         64,
@@ -296,7 +296,7 @@
     {
       "identity": "f2",
       "reference": "f2/004_shuffle_00118__f2_f5_f8_d455_color_20260918_093951_907387_frame_000066_src_000434_000014467ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00118__f2_f5_f8_d455_color_20260918_093951_907387_frame_000066_src_000434_000014467ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00118__f2_f5_f8_d455_color_20260918_093951_907387_frame_000066_src_000434_000014467ms_int8.jpg",
       "bbox_xyxy": [
         813,
         47,
@@ -308,7 +308,7 @@
     {
       "identity": "f2",
       "reference": "f2/005_shuffle_01486__f2_d455_color_20260918_090846_976549_frame_000003_src_000015_000000500ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01486__f2_d455_color_20260918_090846_976549_frame_000003_src_000015_000000500ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01486__f2_d455_color_20260918_090846_976549_frame_000003_src_000015_000000500ms_int5.jpg",
       "bbox_xyxy": [
         249,
         0,
@@ -320,7 +320,7 @@
     {
       "identity": "f2",
       "reference": "f2/006_shuffle_01281__f2_d455_color_20260918_090640_292122_frame_000155_src_001087_000036233ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01281__f2_d455_color_20260918_090640_292122_frame_000155_src_001087_000036233ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01281__f2_d455_color_20260918_090640_292122_frame_000155_src_001087_000036233ms_int5.jpg",
       "bbox_xyxy": [
         50,
         322,
@@ -332,7 +332,7 @@
     {
       "identity": "f2",
       "reference": "f2/007_shuffle_02073__f2_f5_f8_d455_color_20260918_093604_648930_frame_000171_src_001193_000039767ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_02073__f2_f5_f8_d455_color_20260918_093604_648930_frame_000171_src_001193_000039767ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_02073__f2_f5_f8_d455_color_20260918_093604_648930_frame_000171_src_001193_000039767ms_int8.jpg",
       "bbox_xyxy": [
         509,
         278,
@@ -344,7 +344,7 @@
     {
       "identity": "f2",
       "reference": "f2/008_shuffle_00931__f2_d455_color_20260918_090807_734639_frame_000008_src_000063_000002100ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00931__f2_d455_color_20260918_090807_734639_frame_000008_src_000063_000002100ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00931__f2_d455_color_20260918_090807_734639_frame_000008_src_000063_000002100ms_int3.jpg",
       "bbox_xyxy": [
         116,
         192,
@@ -356,7 +356,7 @@
     {
       "identity": "f2",
       "reference": "f2/009_shuffle_000010__k3k4k8f2f5_d455_color_20260920_164520_321659_frame_000130_src_000867_000028900ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000010__k3k4k8f2f5_d455_color_20260920_164520_321659_frame_000130_src_000867_000028900ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000010__k3k4k8f2f5_d455_color_20260920_164520_321659_frame_000130_src_000867_000028900ms_int5.jpg",
       "bbox_xyxy": [
         200,
         499,
@@ -368,7 +368,7 @@
     {
       "identity": "f2",
       "reference": "f2/010_shuffle_01153__f2_f5_f8_d455_color_20260918_093758_773465_frame_000100_src_000713_000023767ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01153__f2_f5_f8_d455_color_20260918_093758_773465_frame_000100_src_000713_000023767ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01153__f2_f5_f8_d455_color_20260918_093758_773465_frame_000100_src_000713_000023767ms_int9.jpg",
       "bbox_xyxy": [
         583,
         532,
@@ -380,7 +380,7 @@
     {
       "identity": "f2",
       "reference": "f2/011_shuffle_02009__all_d455_color_20260917_230436_260378_frame_000089_src_000622_000020733ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_02009__all_d455_color_20260917_230436_260378_frame_000089_src_000622_000020733ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_02009__all_d455_color_20260917_230436_260378_frame_000089_src_000622_000020733ms_int9.jpg",
       "bbox_xyxy": [
         1068,
         348,
@@ -392,7 +392,7 @@
     {
       "identity": "f2",
       "reference": "f2/012_shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
       "bbox_xyxy": [
         291,
         246,
@@ -404,7 +404,7 @@
     {
       "identity": "f2",
       "reference": "f2/013_shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
       "bbox_xyxy": [
         917,
         222,
@@ -416,7 +416,7 @@
     {
       "identity": "f2",
       "reference": "f2/014_shuffle_01699__f2_f5_f8_d455_color_20260918_093859_711228_frame_000063_src_000456_000015200ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01699__f2_f5_f8_d455_color_20260918_093859_711228_frame_000063_src_000456_000015200ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01699__f2_f5_f8_d455_color_20260918_093859_711228_frame_000063_src_000456_000015200ms_int5.jpg",
       "bbox_xyxy": [
         842,
         445,
@@ -428,7 +428,7 @@
     {
       "identity": "f2",
       "reference": "f2/015_shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
       "bbox_xyxy": [
         684,
         335,
@@ -440,7 +440,7 @@
     {
       "identity": "f2",
       "reference": "f2/016_shuffle_000002__k3k4k8f2f5_d455_color_20260920_164653_797615_frame_000026_src_000173_000005767ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000002__k3k4k8f2f5_d455_color_20260920_164653_797615_frame_000026_src_000173_000005767ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000002__k3k4k8f2f5_d455_color_20260920_164653_797615_frame_000026_src_000173_000005767ms_int7.jpg",
       "bbox_xyxy": [
         866,
         327,
@@ -452,7 +452,7 @@
     {
       "identity": "f2",
       "reference": "f2/017_shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
       "bbox_xyxy": [
         30,
         309,
@@ -464,7 +464,7 @@
     {
       "identity": "f2",
       "reference": "f2/018_shuffle_00311__f2_f5_f8_d455_color_20260918_093951_907387_frame_000158_src_001081_000036033ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00311__f2_f5_f8_d455_color_20260918_093951_907387_frame_000158_src_001081_000036033ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00311__f2_f5_f8_d455_color_20260918_093951_907387_frame_000158_src_001081_000036033ms_int3.jpg",
       "bbox_xyxy": [
         0,
         189,
@@ -476,7 +476,7 @@
     {
       "identity": "f2",
       "reference": "f2/019_shuffle_01478__f2_d455_color_20260918_090640_292122_frame_000151_src_001057_000035233ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01478__f2_d455_color_20260918_090640_292122_frame_000151_src_001057_000035233ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01478__f2_d455_color_20260918_090640_292122_frame_000151_src_001057_000035233ms_int8.jpg",
       "bbox_xyxy": [
         503,
         0,
@@ -488,7 +488,7 @@
     {
       "identity": "f2",
       "reference": "f2/020_shuffle_00938__f2_d455_color_20260918_090526_100743_frame_000104_src_000788_000026267ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00938__f2_d455_color_20260918_090526_100743_frame_000104_src_000788_000026267ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00938__f2_d455_color_20260918_090526_100743_frame_000104_src_000788_000026267ms_int9.jpg",
       "bbox_xyxy": [
         243,
         465,
@@ -500,7 +500,7 @@
     {
       "identity": "f3",
       "reference": "f3/001_shuffle_00254__f3_f6_f10_d455_color_20260918_091908_789202_frame_000112_src_000765_000025500ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00254__f3_f6_f10_d455_color_20260918_091908_789202_frame_000112_src_000765_000025500ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00254__f3_f6_f10_d455_color_20260918_091908_789202_frame_000112_src_000765_000025500ms_int9.jpg",
       "bbox_xyxy": [
         133,
         320,
@@ -512,7 +512,7 @@
     {
       "identity": "f3",
       "reference": "f3/002_shuffle_00392__f3_f6_f10_d455_color_20260918_092141_536480_frame_000242_src_001678_000055933ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00392__f3_f6_f10_d455_color_20260918_092141_536480_frame_000242_src_001678_000055933ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00392__f3_f6_f10_d455_color_20260918_092141_536480_frame_000242_src_001678_000055933ms_int3.jpg",
       "bbox_xyxy": [
         880,
         6,
@@ -524,7 +524,7 @@
     {
       "identity": "f3",
       "reference": "f3/003_shuffle_000005__k2_k6_f1_f3_f4_d455_color_20260920_163611_219286_frame_000150_src_000985_000032833ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000005__k2_k6_f1_f3_f4_d455_color_20260920_163611_219286_frame_000150_src_000985_000032833ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000005__k2_k6_f1_f3_f4_d455_color_20260920_163611_219286_frame_000150_src_000985_000032833ms_int5.jpg",
       "bbox_xyxy": [
         18,
         393,
@@ -536,7 +536,7 @@
     {
       "identity": "f3",
       "reference": "f3/004_shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
       "bbox_xyxy": [
         1003,
         168,
@@ -548,7 +548,7 @@
     {
       "identity": "f3",
       "reference": "f3/005_shuffle_00741__all_d455_color_20260917_230436_260378_frame_000076_src_000530_000017667ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00741__all_d455_color_20260917_230436_260378_frame_000076_src_000530_000017667ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00741__all_d455_color_20260917_230436_260378_frame_000076_src_000530_000017667ms_int3.jpg",
       "bbox_xyxy": [
         1077,
         277,
@@ -560,7 +560,7 @@
     {
       "identity": "f3",
       "reference": "f3/006_shuffle_000004__k2_k6_f1_f3_f4_d455_color_20260920_164012_471764_frame_000046_src_000325_000010833ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000004__k2_k6_f1_f3_f4_d455_color_20260920_164012_471764_frame_000046_src_000325_000010833ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000004__k2_k6_f1_f3_f4_d455_color_20260920_164012_471764_frame_000046_src_000325_000010833ms_int10.jpg",
       "bbox_xyxy": [
         933,
         442,
@@ -572,7 +572,7 @@
     {
       "identity": "f3",
       "reference": "f3/007_shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
       "bbox_xyxy": [
         321,
         360,
@@ -584,7 +584,7 @@
     {
       "identity": "f3",
       "reference": "f3/008_shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
       "bbox_xyxy": [
         692,
         249,
@@ -596,7 +596,7 @@
     {
       "identity": "f3",
       "reference": "f3/009_shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
       "bbox_xyxy": [
         118,
         316,
@@ -608,7 +608,7 @@
     {
       "identity": "f3",
       "reference": "f3/010_shuffle_00182__k3_d455_color_20260918_082849_597223_frame_000004_src_000033_000001100ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00182__k3_d455_color_20260918_082849_597223_frame_000004_src_000033_000001100ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00182__k3_d455_color_20260918_082849_597223_frame_000004_src_000033_000001100ms_int5.jpg",
       "bbox_xyxy": [
         435,
         394,
@@ -620,7 +620,7 @@
     {
       "identity": "f3",
       "reference": "f3/011_shuffle_01476__f3_f6_f10_d455_color_20260918_091908_789202_frame_000096_src_000654_000021800ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01476__f3_f6_f10_d455_color_20260918_091908_789202_frame_000096_src_000654_000021800ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01476__f3_f6_f10_d455_color_20260918_091908_789202_frame_000096_src_000654_000021800ms_int7.jpg",
       "bbox_xyxy": [
         0,
         441,
@@ -632,7 +632,7 @@
     {
       "identity": "f3",
       "reference": "f3/012_shuffle_01426__f3_f6_f10_d455_color_20260918_092141_536480_frame_000245_src_001692_000056400ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01426__f3_f6_f10_d455_color_20260918_092141_536480_frame_000245_src_001692_000056400ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01426__f3_f6_f10_d455_color_20260918_092141_536480_frame_000245_src_001692_000056400ms_int9.jpg",
       "bbox_xyxy": [
         627,
         20,
@@ -644,7 +644,7 @@
     {
       "identity": "f3",
       "reference": "f3/013_shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
       "bbox_xyxy": [
         171,
         424,
@@ -656,7 +656,7 @@
     {
       "identity": "f3",
       "reference": "f3/014_shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
       "bbox_xyxy": [
         639,
         226,
@@ -668,7 +668,7 @@
     {
       "identity": "f3",
       "reference": "f3/015_shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
       "bbox_xyxy": [
         365,
         229,
@@ -680,7 +680,7 @@
     {
       "identity": "f3",
       "reference": "f3/016_shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
       "bbox_xyxy": [
         645,
         251,
@@ -692,7 +692,7 @@
     {
       "identity": "f3",
       "reference": "f3/017_shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
       "bbox_xyxy": [
         32,
         265,
@@ -704,7 +704,7 @@
     {
       "identity": "f3",
       "reference": "f3/018_shuffle_01906__f3_f6_f10_d455_color_20260918_091908_789202_frame_000095_src_000647_000021567ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01906__f3_f6_f10_d455_color_20260918_091908_789202_frame_000095_src_000647_000021567ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01906__f3_f6_f10_d455_color_20260918_091908_789202_frame_000095_src_000647_000021567ms_int7.jpg",
       "bbox_xyxy": [
         75,
         415,
@@ -716,7 +716,7 @@
     {
       "identity": "f3",
       "reference": "f3/019_shuffle_00467__f3_f6_f10_d455_color_20260918_092141_536480_frame_000094_src_000633_000021100ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00467__f3_f6_f10_d455_color_20260918_092141_536480_frame_000094_src_000633_000021100ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00467__f3_f6_f10_d455_color_20260918_092141_536480_frame_000094_src_000633_000021100ms_int9.jpg",
       "bbox_xyxy": [
         721,
         0,
@@ -728,7 +728,7 @@
     {
       "identity": "f3",
       "reference": "f3/020_shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
       "bbox_xyxy": [
         269,
         430,
@@ -740,7 +740,7 @@
     {
       "identity": "f4",
       "reference": "f4/001_shuffle_01866__f1_f4_d455_color_20260918_093021_889527_frame_000254_src_001764_000058800ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01866__f1_f4_d455_color_20260918_093021_889527_frame_000254_src_001764_000058800ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01866__f1_f4_d455_color_20260918_093021_889527_frame_000254_src_001764_000058800ms_int10.jpg",
       "bbox_xyxy": [
         829,
         383,
@@ -752,7 +752,7 @@
     {
       "identity": "f4",
       "reference": "f4/002_shuffle_01605__f1_f4_d455_color_20260918_092914_371991_frame_000097_src_000655_000021833ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01605__f1_f4_d455_color_20260918_092914_371991_frame_000097_src_000655_000021833ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01605__f1_f4_d455_color_20260918_092914_371991_frame_000097_src_000655_000021833ms_int10.jpg",
       "bbox_xyxy": [
         1071,
         302,
@@ -764,7 +764,7 @@
     {
       "identity": "f4",
       "reference": "f4/003_shuffle_00908__f1_f4_d455_color_20260918_093141_998032_frame_000059_src_000417_000013900ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00908__f1_f4_d455_color_20260918_093141_998032_frame_000059_src_000417_000013900ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00908__f1_f4_d455_color_20260918_093141_998032_frame_000059_src_000417_000013900ms_int8.jpg",
       "bbox_xyxy": [
         849,
         493,
@@ -776,7 +776,7 @@
     {
       "identity": "f4",
       "reference": "f4/004_shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
       "bbox_xyxy": [
         499,
         504,
@@ -788,7 +788,7 @@
     {
       "identity": "f4",
       "reference": "f4/005_shuffle_000004__k2_k6_f1_f3_f4_d455_color_20260920_164012_471764_frame_000046_src_000325_000010833ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000004__k2_k6_f1_f3_f4_d455_color_20260920_164012_471764_frame_000046_src_000325_000010833ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000004__k2_k6_f1_f3_f4_d455_color_20260920_164012_471764_frame_000046_src_000325_000010833ms_int10.jpg",
       "bbox_xyxy": [
         1055,
         487,
@@ -800,7 +800,7 @@
     {
       "identity": "f4",
       "reference": "f4/006_shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
       "bbox_xyxy": [
         1109,
         108,
@@ -812,7 +812,7 @@
     {
       "identity": "f4",
       "reference": "f4/007_shuffle_01483__f1_f4_d455_color_20260918_093215_640581_frame_000014_src_000098_000003267ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01483__f1_f4_d455_color_20260918_093215_640581_frame_000014_src_000098_000003267ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01483__f1_f4_d455_color_20260918_093215_640581_frame_000014_src_000098_000003267ms_int10.jpg",
       "bbox_xyxy": [
         154,
         267,
@@ -824,7 +824,7 @@
     {
       "identity": "f4",
       "reference": "f4/008_shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
       "bbox_xyxy": [
         321,
         459,
@@ -836,7 +836,7 @@
     {
       "identity": "f4",
       "reference": "f4/009_shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
       "bbox_xyxy": [
         700,
         165,
@@ -848,7 +848,7 @@
     {
       "identity": "f4",
       "reference": "f4/010_shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
       "bbox_xyxy": [
         187,
         305,
@@ -860,7 +860,7 @@
     {
       "identity": "f4",
       "reference": "f4/011_shuffle_01534__f1_f4_d455_color_20260918_092914_371991_frame_000060_src_000412_000013733ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01534__f1_f4_d455_color_20260918_092914_371991_frame_000060_src_000412_000013733ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01534__f1_f4_d455_color_20260918_092914_371991_frame_000060_src_000412_000013733ms_int3.jpg",
       "bbox_xyxy": [
         576,
         213,
@@ -872,7 +872,7 @@
     {
       "identity": "f4",
       "reference": "f4/012_shuffle_00092__f1_f4_d455_color_20260918_093306_372364_frame_000056_src_000385_000012833ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00092__f1_f4_d455_color_20260918_093306_372364_frame_000056_src_000385_000012833ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00092__f1_f4_d455_color_20260918_093306_372364_frame_000056_src_000385_000012833ms_int9.jpg",
       "bbox_xyxy": [
         626,
         449,
@@ -884,7 +884,7 @@
     {
       "identity": "f4",
       "reference": "f4/013_shuffle_01895__f1_f4_d455_color_20260918_093021_889527_frame_000206_src_001431_000047700ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01895__f1_f4_d455_color_20260918_093021_889527_frame_000206_src_001431_000047700ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01895__f1_f4_d455_color_20260918_093021_889527_frame_000206_src_001431_000047700ms_int10.jpg",
       "bbox_xyxy": [
         240,
         388,
@@ -896,7 +896,7 @@
     {
       "identity": "f4",
       "reference": "f4/014_shuffle_00278__f1_f4_d455_color_20260918_092914_371991_frame_000178_src_001256_000041867ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00278__f1_f4_d455_color_20260918_092914_371991_frame_000178_src_001256_000041867ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00278__f1_f4_d455_color_20260918_092914_371991_frame_000178_src_001256_000041867ms_int3.jpg",
       "bbox_xyxy": [
         1049,
         398,
@@ -908,7 +908,7 @@
     {
       "identity": "f4",
       "reference": "f4/015_shuffle_01631__f1_f4_d455_color_20260918_093141_998032_frame_000053_src_000384_000012800ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01631__f1_f4_d455_color_20260918_093141_998032_frame_000053_src_000384_000012800ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01631__f1_f4_d455_color_20260918_093141_998032_frame_000053_src_000384_000012800ms_int7.jpg",
       "bbox_xyxy": [
         1168,
         286,
@@ -920,7 +920,7 @@
     {
       "identity": "f4",
       "reference": "f4/016_shuffle_00741__all_d455_color_20260917_230436_260378_frame_000076_src_000530_000017667ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00741__all_d455_color_20260917_230436_260378_frame_000076_src_000530_000017667ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00741__all_d455_color_20260917_230436_260378_frame_000076_src_000530_000017667ms_int3.jpg",
       "bbox_xyxy": [
         1082,
         162,
@@ -932,7 +932,7 @@
     {
       "identity": "f4",
       "reference": "f4/017_shuffle_00017__all_d455_color_20260917_231331_342206_frame_000003_src_000020_000000667ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00017__all_d455_color_20260917_231331_342206_frame_000003_src_000020_000000667ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00017__all_d455_color_20260917_231331_342206_frame_000003_src_000020_000000667ms_int10.jpg",
       "bbox_xyxy": [
         401,
         436,
@@ -944,7 +944,7 @@
     {
       "identity": "f4",
       "reference": "f4/018_shuffle_00378__f1_f4_d455_color_20260918_093215_640581_frame_000113_src_000815_000027167ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00378__f1_f4_d455_color_20260918_093215_640581_frame_000113_src_000815_000027167ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00378__f1_f4_d455_color_20260918_093215_640581_frame_000113_src_000815_000027167ms_int5.jpg",
       "bbox_xyxy": [
         213,
         138,
@@ -956,7 +956,7 @@
     {
       "identity": "f4",
       "reference": "f4/019_shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
       "bbox_xyxy": [
         327,
         285,
@@ -968,7 +968,7 @@
     {
       "identity": "f4",
       "reference": "f4/020_shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
       "bbox_xyxy": [
         651,
         186,
@@ -980,7 +980,7 @@
     {
       "identity": "f5",
       "reference": "f5/001_shuffle_01153__f2_f5_f8_d455_color_20260918_093758_773465_frame_000100_src_000713_000023767ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01153__f2_f5_f8_d455_color_20260918_093758_773465_frame_000100_src_000713_000023767ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01153__f2_f5_f8_d455_color_20260918_093758_773465_frame_000100_src_000713_000023767ms_int9.jpg",
       "bbox_xyxy": [
         682,
         172,
@@ -992,7 +992,7 @@
     {
       "identity": "f5",
       "reference": "f5/002_shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
       "bbox_xyxy": [
         771,
         72,
@@ -1004,7 +1004,7 @@
     {
       "identity": "f5",
       "reference": "f5/003_shuffle_01710__f2_f5_f8_d455_color_20260918_093604_648930_frame_000170_src_001186_000039533ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01710__f2_f5_f8_d455_color_20260918_093604_648930_frame_000170_src_001186_000039533ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01710__f2_f5_f8_d455_color_20260918_093604_648930_frame_000170_src_001186_000039533ms_int7.jpg",
       "bbox_xyxy": [
         743,
         0,
@@ -1016,7 +1016,7 @@
     {
       "identity": "f5",
       "reference": "f5/004_shuffle_01298__f2_f5_f8_d455_color_20260918_093604_648930_frame_000169_src_001178_000039267ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01298__f2_f5_f8_d455_color_20260918_093604_648930_frame_000169_src_001178_000039267ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01298__f2_f5_f8_d455_color_20260918_093604_648930_frame_000169_src_001178_000039267ms_int8.jpg",
       "bbox_xyxy": [
         801,
         136,
@@ -1028,7 +1028,7 @@
     {
       "identity": "f5",
       "reference": "f5/005_shuffle_000010__k3k4k8f2f5_d455_color_20260920_164520_321659_frame_000130_src_000867_000028900ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000010__k3k4k8f2f5_d455_color_20260920_164520_321659_frame_000130_src_000867_000028900ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000010__k3k4k8f2f5_d455_color_20260920_164520_321659_frame_000130_src_000867_000028900ms_int5.jpg",
       "bbox_xyxy": [
         266,
         209,
@@ -1040,7 +1040,7 @@
     {
       "identity": "f5",
       "reference": "f5/006_shuffle_000002__k3k4k8f2f5_d455_color_20260920_164653_797615_frame_000026_src_000173_000005767ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000002__k3k4k8f2f5_d455_color_20260920_164653_797615_frame_000026_src_000173_000005767ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000002__k3k4k8f2f5_d455_color_20260920_164653_797615_frame_000026_src_000173_000005767ms_int7.jpg",
       "bbox_xyxy": [
         1031,
         349,
@@ -1052,7 +1052,7 @@
     {
       "identity": "f5",
       "reference": "f5/007_shuffle_00118__f2_f5_f8_d455_color_20260918_093951_907387_frame_000066_src_000434_000014467ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00118__f2_f5_f8_d455_color_20260918_093951_907387_frame_000066_src_000434_000014467ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00118__f2_f5_f8_d455_color_20260918_093951_907387_frame_000066_src_000434_000014467ms_int8.jpg",
       "bbox_xyxy": [
         557,
         200,
@@ -1064,7 +1064,7 @@
     {
       "identity": "f5",
       "reference": "f5/008_shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
       "bbox_xyxy": [
         701,
         68,
@@ -1076,7 +1076,7 @@
     {
       "identity": "f5",
       "reference": "f5/009_shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
       "bbox_xyxy": [
         334,
         546,
@@ -1088,7 +1088,7 @@
     {
       "identity": "f5",
       "reference": "f5/010_shuffle_00017__all_d455_color_20260917_231331_342206_frame_000003_src_000020_000000667ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00017__all_d455_color_20260917_231331_342206_frame_000003_src_000020_000000667ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00017__all_d455_color_20260917_231331_342206_frame_000003_src_000020_000000667ms_int10.jpg",
       "bbox_xyxy": [
         406,
         529,
@@ -1100,7 +1100,7 @@
     {
       "identity": "f5",
       "reference": "f5/011_shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
       "bbox_xyxy": [
         254,
         318,
@@ -1112,7 +1112,7 @@
     {
       "identity": "f5",
       "reference": "f5/012_shuffle_00115__f2_f5_f8_d455_color_20260918_093604_648930_frame_000174_src_001211_000040367ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00115__f2_f5_f8_d455_color_20260918_093604_648930_frame_000174_src_001211_000040367ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00115__f2_f5_f8_d455_color_20260918_093604_648930_frame_000174_src_001211_000040367ms_int9.jpg",
       "bbox_xyxy": [
         502,
         187,
@@ -1124,7 +1124,7 @@
     {
       "identity": "f5",
       "reference": "f5/013_shuffle_01726__f7_d455_color_20260918_091708_187323_frame_000083_src_000575_000019167ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01726__f7_d455_color_20260918_091708_187323_frame_000083_src_000575_000019167ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01726__f7_d455_color_20260918_091708_187323_frame_000083_src_000575_000019167ms_int5.jpg",
       "bbox_xyxy": [
         624,
         362,
@@ -1136,7 +1136,7 @@
     {
       "identity": "f5",
       "reference": "f5/014_shuffle_00738__f1_f4_d455_color_20260918_093021_889527_frame_000091_src_000652_000021733ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00738__f1_f4_d455_color_20260918_093021_889527_frame_000091_src_000652_000021733ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00738__f1_f4_d455_color_20260918_093021_889527_frame_000091_src_000652_000021733ms_int8.jpg",
       "bbox_xyxy": [
         546,
         673,
@@ -1148,7 +1148,7 @@
     {
       "identity": "f5",
       "reference": "f5/015_shuffle_02156__f2_f5_f8_d455_color_20260918_093758_773465_frame_000097_src_000689_000022967ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_02156__f2_f5_f8_d455_color_20260918_093758_773465_frame_000097_src_000689_000022967ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_02156__f2_f5_f8_d455_color_20260918_093758_773465_frame_000097_src_000689_000022967ms_int7.jpg",
       "bbox_xyxy": [
         678,
         145,
@@ -1160,7 +1160,7 @@
     {
       "identity": "f5",
       "reference": "f5/016_shuffle_00741__all_d455_color_20260917_230436_260378_frame_000076_src_000530_000017667ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00741__all_d455_color_20260917_230436_260378_frame_000076_src_000530_000017667ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00741__all_d455_color_20260917_230436_260378_frame_000076_src_000530_000017667ms_int3.jpg",
       "bbox_xyxy": [
         1074,
         27,
@@ -1172,7 +1172,7 @@
     {
       "identity": "f5",
       "reference": "f5/017_shuffle_01951__f2_f5_f8_d455_color_20260918_093604_648930_frame_000026_src_000184_000006133ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01951__f2_f5_f8_d455_color_20260918_093604_648930_frame_000026_src_000184_000006133ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01951__f2_f5_f8_d455_color_20260918_093604_648930_frame_000026_src_000184_000006133ms_int10.jpg",
       "bbox_xyxy": [
         1009,
         231,
@@ -1184,7 +1184,7 @@
     {
       "identity": "f5",
       "reference": "f5/018_shuffle_00910__f2_f5_f8_d455_color_20260918_093859_711228_frame_000096_src_000699_000023300ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00910__f2_f5_f8_d455_color_20260918_093859_711228_frame_000096_src_000699_000023300ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00910__f2_f5_f8_d455_color_20260918_093859_711228_frame_000096_src_000699_000023300ms_int8.jpg",
       "bbox_xyxy": [
         229,
         77,
@@ -1196,7 +1196,7 @@
     {
       "identity": "f5",
       "reference": "f5/019_shuffle_000001__k3k4k8f2f5_d455_color_20260920_164520_321659_frame_000164_src_001079_000035967ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000001__k3k4k8f2f5_d455_color_20260920_164520_321659_frame_000164_src_001079_000035967ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000001__k3k4k8f2f5_d455_color_20260920_164520_321659_frame_000164_src_001079_000035967ms_int3.jpg",
       "bbox_xyxy": [
         458,
         168,
@@ -1208,7 +1208,7 @@
     {
       "identity": "f5",
       "reference": "f5/020_shuffle_00552__f2_f5_f8_d455_color_20260918_093951_907387_frame_000148_src_001009_000033633ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00552__f2_f5_f8_d455_color_20260918_093951_907387_frame_000148_src_001009_000033633ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00552__f2_f5_f8_d455_color_20260918_093951_907387_frame_000148_src_001009_000033633ms_int5.jpg",
       "bbox_xyxy": [
         0,
         485,
@@ -1220,7 +1220,7 @@
     {
       "identity": "f6",
       "reference": "f6/001_shuffle_00392__f3_f6_f10_d455_color_20260918_092141_536480_frame_000242_src_001678_000055933ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00392__f3_f6_f10_d455_color_20260918_092141_536480_frame_000242_src_001678_000055933ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00392__f3_f6_f10_d455_color_20260918_092141_536480_frame_000242_src_001678_000055933ms_int3.jpg",
       "bbox_xyxy": [
         255,
         400,
@@ -1232,7 +1232,7 @@
     {
       "identity": "f6",
       "reference": "f6/002_shuffle_000013__k5k10f6f7f8f9f10_d455_color_20260920_165901_341490_frame_000059_src_000405_000013500ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000013__k5k10f6f7f8f9f10_d455_color_20260920_165901_341490_frame_000059_src_000405_000013500ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000013__k5k10f6f7f8f9f10_d455_color_20260920_165901_341490_frame_000059_src_000405_000013500ms_int8.jpg",
       "bbox_xyxy": [
         808,
         502,
@@ -1244,7 +1244,7 @@
     {
       "identity": "f6",
       "reference": "f6/003_shuffle_01197__f3_f6_f10_d455_color_20260918_091908_789202_frame_000209_src_001420_000047333ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01197__f3_f6_f10_d455_color_20260918_091908_789202_frame_000209_src_001420_000047333ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01197__f3_f6_f10_d455_color_20260918_091908_789202_frame_000209_src_001420_000047333ms_int5.jpg",
       "bbox_xyxy": [
         1090,
         45,
@@ -1256,7 +1256,7 @@
     {
       "identity": "f6",
       "reference": "f6/004_shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
       "bbox_xyxy": [
         82,
         113,
@@ -1268,7 +1268,7 @@
     {
       "identity": "f6",
       "reference": "f6/005_shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
       "bbox_xyxy": [
         85,
         238,
@@ -1280,7 +1280,7 @@
     {
       "identity": "f6",
       "reference": "f6/006_shuffle_000008__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000075_src_000493_000016433ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000008__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000075_src_000493_000016433ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000008__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000075_src_000493_000016433ms_int5.jpg",
       "bbox_xyxy": [
         1148,
         0,
@@ -1292,7 +1292,7 @@
     {
       "identity": "f6",
       "reference": "f6/007_shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
       "bbox_xyxy": [
         605,
         199,
@@ -1304,7 +1304,7 @@
     {
       "identity": "f6",
       "reference": "f6/008_shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
       "bbox_xyxy": [
         796,
         426,
@@ -1316,7 +1316,7 @@
     {
       "identity": "f6",
       "reference": "f6/009_shuffle_01628__all_d455_color_20260917_230719_376025_frame_000113_src_000781_000026033ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01628__all_d455_color_20260917_230719_376025_frame_000113_src_000781_000026033ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01628__all_d455_color_20260917_230719_376025_frame_000113_src_000781_000026033ms_int8.jpg",
       "bbox_xyxy": [
         221,
         238,
@@ -1328,7 +1328,7 @@
     {
       "identity": "f6",
       "reference": "f6/010_shuffle_00679__f3_f6_f10_d455_color_20260918_091908_789202_frame_000100_src_000680_000022667ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00679__f3_f6_f10_d455_color_20260918_091908_789202_frame_000100_src_000680_000022667ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00679__f3_f6_f10_d455_color_20260918_091908_789202_frame_000100_src_000680_000022667ms_int8.jpg",
       "bbox_xyxy": [
         49,
         483,
@@ -1340,7 +1340,7 @@
     {
       "identity": "f6",
       "reference": "f6/011_shuffle_01426__f3_f6_f10_d455_color_20260918_092141_536480_frame_000245_src_001692_000056400ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01426__f3_f6_f10_d455_color_20260918_092141_536480_frame_000245_src_001692_000056400ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01426__f3_f6_f10_d455_color_20260918_092141_536480_frame_000245_src_001692_000056400ms_int9.jpg",
       "bbox_xyxy": [
         0,
         359,
@@ -1352,7 +1352,7 @@
     {
       "identity": "f6",
       "reference": "f6/012_shuffle_00788__f3_f6_f10_d455_color_20260918_091908_789202_frame_000028_src_000202_000006733ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00788__f3_f6_f10_d455_color_20260918_091908_789202_frame_000028_src_000202_000006733ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00788__f3_f6_f10_d455_color_20260918_091908_789202_frame_000028_src_000202_000006733ms_int3.jpg",
       "bbox_xyxy": [
         524,
         536,
@@ -1364,7 +1364,7 @@
     {
       "identity": "f6",
       "reference": "f6/013_shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
       "bbox_xyxy": [
         316,
         53,
@@ -1376,7 +1376,7 @@
     {
       "identity": "f6",
       "reference": "f6/014_shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
       "bbox_xyxy": [
         0,
         249,
@@ -1388,7 +1388,7 @@
     {
       "identity": "f6",
       "reference": "f6/015_shuffle_00290__all_d455_color_20260917_230436_260378_frame_000088_src_000617_000020567ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00290__all_d455_color_20260917_230436_260378_frame_000088_src_000617_000020567ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00290__all_d455_color_20260917_230436_260378_frame_000088_src_000617_000020567ms_int5.jpg",
       "bbox_xyxy": [
         1138,
         525,
@@ -1400,7 +1400,7 @@
     {
       "identity": "f6",
       "reference": "f6/016_shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
       "bbox_xyxy": [
         714,
         385,
@@ -1412,7 +1412,7 @@
     {
       "identity": "f6",
       "reference": "f6/017_shuffle_01108__all_d455_color_20260917_230719_376025_frame_000138_src_000972_000032400ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01108__all_d455_color_20260917_230719_376025_frame_000138_src_000972_000032400ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01108__all_d455_color_20260917_230719_376025_frame_000138_src_000972_000032400ms_int7.jpg",
       "bbox_xyxy": [
         36,
         430,
@@ -1424,7 +1424,7 @@
     {
       "identity": "f6",
       "reference": "f6/018_shuffle_02116__f3_f6_f10_d455_color_20260918_092141_536480_frame_000240_src_001666_000055533ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_02116__f3_f6_f10_d455_color_20260918_092141_536480_frame_000240_src_001666_000055533ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_02116__f3_f6_f10_d455_color_20260918_092141_536480_frame_000240_src_001666_000055533ms_int7.jpg",
       "bbox_xyxy": [
         823,
         368,
@@ -1436,7 +1436,7 @@
     {
       "identity": "f6",
       "reference": "f6/019_shuffle_00670__f3_f6_f10_d455_color_20260918_091908_789202_frame_000027_src_000199_000006633ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00670__f3_f6_f10_d455_color_20260918_091908_789202_frame_000027_src_000199_000006633ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00670__f3_f6_f10_d455_color_20260918_091908_789202_frame_000027_src_000199_000006633ms_int3.jpg",
       "bbox_xyxy": [
         518,
         568,
@@ -1448,7 +1448,7 @@
     {
       "identity": "f6",
       "reference": "f6/020_shuffle_01195__all_d455_color_20260917_231118_960305_frame_000337_src_002373_000079100ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01195__all_d455_color_20260917_231118_960305_frame_000337_src_002373_000079100ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01195__all_d455_color_20260917_231118_960305_frame_000337_src_002373_000079100ms_int10.jpg",
       "bbox_xyxy": [
         230,
         221,
@@ -1460,7 +1460,7 @@
     {
       "identity": "f7",
       "reference": "f7/001_shuffle_01556__f7_d455_color_20260918_091412_060840_frame_000193_src_001349_000044967ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01556__f7_d455_color_20260918_091412_060840_frame_000193_src_001349_000044967ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01556__f7_d455_color_20260918_091412_060840_frame_000193_src_001349_000044967ms_int8.jpg",
       "bbox_xyxy": [
         226,
         357,
@@ -1472,7 +1472,7 @@
     {
       "identity": "f7",
       "reference": "f7/002_shuffle_00457__f7_d455_color_20260918_091550_421181_frame_000131_src_000970_000032333ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00457__f7_d455_color_20260918_091550_421181_frame_000131_src_000970_000032333ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00457__f7_d455_color_20260918_091550_421181_frame_000131_src_000970_000032333ms_int7.jpg",
       "bbox_xyxy": [
         871,
         50,
@@ -1484,7 +1484,7 @@
     {
       "identity": "f7",
       "reference": "f7/003_shuffle_01638__f7_d455_color_20260918_091708_187323_frame_000108_src_000734_000024467ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01638__f7_d455_color_20260918_091708_187323_frame_000108_src_000734_000024467ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01638__f7_d455_color_20260918_091708_187323_frame_000108_src_000734_000024467ms_int10.jpg",
       "bbox_xyxy": [
         46,
         338,
@@ -1496,7 +1496,7 @@
     {
       "identity": "f7",
       "reference": "f7/004_shuffle_00290__all_d455_color_20260917_230436_260378_frame_000088_src_000617_000020567ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00290__all_d455_color_20260917_230436_260378_frame_000088_src_000617_000020567ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00290__all_d455_color_20260917_230436_260378_frame_000088_src_000617_000020567ms_int5.jpg",
       "bbox_xyxy": [
         1136,
         414,
@@ -1508,7 +1508,7 @@
     {
       "identity": "f7",
       "reference": "f7/005_shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
       "bbox_xyxy": [
         976,
         329,
@@ -1520,7 +1520,7 @@
     {
       "identity": "f7",
       "reference": "f7/006_shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
       "bbox_xyxy": [
         113,
         243,
@@ -1532,7 +1532,7 @@
     {
       "identity": "f7",
       "reference": "f7/007_shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
       "bbox_xyxy": [
         809,
         344,
@@ -1544,7 +1544,7 @@
     {
       "identity": "f7",
       "reference": "f7/008_shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
       "bbox_xyxy": [
         26,
         398,
@@ -1556,7 +1556,7 @@
     {
       "identity": "f7",
       "reference": "f7/009_shuffle_00587__f7_d455_color_20260918_091412_060840_frame_000123_src_000872_000029067ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00587__f7_d455_color_20260918_091412_060840_frame_000123_src_000872_000029067ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00587__f7_d455_color_20260918_091412_060840_frame_000123_src_000872_000029067ms_int10.jpg",
       "bbox_xyxy": [
         0,
         341,
@@ -1568,7 +1568,7 @@
     {
       "identity": "f7",
       "reference": "f7/010_shuffle_00174__f7_d455_color_20260918_091550_421181_frame_000162_src_001184_000039467ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00174__f7_d455_color_20260918_091550_421181_frame_000162_src_001184_000039467ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00174__f7_d455_color_20260918_091550_421181_frame_000162_src_001184_000039467ms_int9.jpg",
       "bbox_xyxy": [
         495,
         500,
@@ -1580,7 +1580,7 @@
     {
       "identity": "f7",
       "reference": "f7/011_shuffle_01205__f7_d455_color_20260918_091708_187323_frame_000054_src_000368_000012267ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01205__f7_d455_color_20260918_091708_187323_frame_000054_src_000368_000012267ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01205__f7_d455_color_20260918_091708_187323_frame_000054_src_000368_000012267ms_int10.jpg",
       "bbox_xyxy": [
         869,
         387,
@@ -1592,7 +1592,7 @@
     {
       "identity": "f7",
       "reference": "f7/012_shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
       "bbox_xyxy": [
         684,
         364,
@@ -1604,7 +1604,7 @@
     {
       "identity": "f7",
       "reference": "f7/013_shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
       "bbox_xyxy": [
         73,
         369,
@@ -1616,7 +1616,7 @@
     {
       "identity": "f7",
       "reference": "f7/014_shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
       "bbox_xyxy": [
         304,
         121,
@@ -1628,7 +1628,7 @@
     {
       "identity": "f7",
       "reference": "f7/015_shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01261__all_d455_color_20260917_230330_750162_frame_000075_src_000493_000016433ms_int7.jpg",
       "bbox_xyxy": [
         723,
         322,
@@ -1640,7 +1640,7 @@
     {
       "identity": "f7",
       "reference": "f7/016_shuffle_01628__all_d455_color_20260917_230719_376025_frame_000113_src_000781_000026033ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01628__all_d455_color_20260917_230719_376025_frame_000113_src_000781_000026033ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01628__all_d455_color_20260917_230719_376025_frame_000113_src_000781_000026033ms_int8.jpg",
       "bbox_xyxy": [
         301,
         263,
@@ -1652,7 +1652,7 @@
     {
       "identity": "f7",
       "reference": "f7/017_shuffle_00850__f7_d455_color_20260918_091412_060840_frame_000110_src_000780_000026000ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00850__f7_d455_color_20260918_091412_060840_frame_000110_src_000780_000026000ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00850__f7_d455_color_20260918_091412_060840_frame_000110_src_000780_000026000ms_int3.jpg",
       "bbox_xyxy": [
         1114,
         285,
@@ -1664,7 +1664,7 @@
     {
       "identity": "f7",
       "reference": "f7/018_shuffle_00021__f7_d455_color_20260918_091550_421181_frame_000074_src_000537_000017900ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00021__f7_d455_color_20260918_091550_421181_frame_000074_src_000537_000017900ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00021__f7_d455_color_20260918_091550_421181_frame_000074_src_000537_000017900ms_int9.jpg",
       "bbox_xyxy": [
         838,
         293,
@@ -1676,7 +1676,7 @@
     {
       "identity": "f7",
       "reference": "f7/019_shuffle_00237__f7_d455_color_20260918_091708_187323_frame_000000_src_000002_000000067ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00237__f7_d455_color_20260918_091708_187323_frame_000000_src_000002_000000067ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00237__f7_d455_color_20260918_091708_187323_frame_000000_src_000002_000000067ms_int5.jpg",
       "bbox_xyxy": [
         1102,
         439,
@@ -1688,7 +1688,7 @@
     {
       "identity": "f7",
       "reference": "f7/020_shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
       "bbox_xyxy": [
         548,
         285,
@@ -1700,7 +1700,7 @@
     {
       "identity": "f8",
       "reference": "f8/001_shuffle_01294__f2_f5_f8_d455_color_20260918_093951_907387_frame_000033_src_000217_000007233ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01294__f2_f5_f8_d455_color_20260918_093951_907387_frame_000033_src_000217_000007233ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01294__f2_f5_f8_d455_color_20260918_093951_907387_frame_000033_src_000217_000007233ms_int3.jpg",
       "bbox_xyxy": [
         935,
         5,
@@ -1712,7 +1712,7 @@
     {
       "identity": "f8",
       "reference": "f8/002_shuffle_02052__f8_f10_d455_color_20260918_092643_988225_frame_000127_src_000885_000029500ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_02052__f8_f10_d455_color_20260918_092643_988225_frame_000127_src_000885_000029500ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_02052__f8_f10_d455_color_20260918_092643_988225_frame_000127_src_000885_000029500ms_int10.jpg",
       "bbox_xyxy": [
         779,
         374,
@@ -1724,7 +1724,7 @@
     {
       "identity": "f8",
       "reference": "f8/003_shuffle_02015__f8_f10_d455_color_20260918_092443_643395_frame_000152_src_001105_000036833ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_02015__f8_f10_d455_color_20260918_092443_643395_frame_000152_src_001105_000036833ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_02015__f8_f10_d455_color_20260918_092443_643395_frame_000152_src_001105_000036833ms_int5.jpg",
       "bbox_xyxy": [
         425,
         194,
@@ -1736,7 +1736,7 @@
     {
       "identity": "f8",
       "reference": "f8/004_shuffle_000015__k5k10f6f7f8f9f10_d455_color_20260920_165901_341490_frame_000165_src_001067_000035567ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000015__k5k10f6f7f8f9f10_d455_color_20260920_165901_341490_frame_000165_src_001067_000035567ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000015__k5k10f6f7f8f9f10_d455_color_20260920_165901_341490_frame_000165_src_001067_000035567ms_int8.jpg",
       "bbox_xyxy": [
         1072,
         505,
@@ -1748,7 +1748,7 @@
     {
       "identity": "f8",
       "reference": "f8/005_shuffle_00599__f2_f5_f8_d455_color_20260918_093758_773465_frame_000162_src_001160_000038667ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00599__f2_f5_f8_d455_color_20260918_093758_773465_frame_000162_src_001160_000038667ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00599__f2_f5_f8_d455_color_20260918_093758_773465_frame_000162_src_001160_000038667ms_int10.jpg",
       "bbox_xyxy": [
         281,
         487,
@@ -1760,7 +1760,7 @@
     {
       "identity": "f8",
       "reference": "f8/006_shuffle_01699__f2_f5_f8_d455_color_20260918_093859_711228_frame_000063_src_000456_000015200ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01699__f2_f5_f8_d455_color_20260918_093859_711228_frame_000063_src_000456_000015200ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01699__f2_f5_f8_d455_color_20260918_093859_711228_frame_000063_src_000456_000015200ms_int5.jpg",
       "bbox_xyxy": [
         1022,
         26,
@@ -1772,7 +1772,7 @@
     {
       "identity": "f8",
       "reference": "f8/007_shuffle_00930__f2_f5_f8_d455_color_20260918_093604_648930_frame_000173_src_001208_000040267ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00930__f2_f5_f8_d455_color_20260918_093604_648930_frame_000173_src_001208_000040267ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00930__f2_f5_f8_d455_color_20260918_093604_648930_frame_000173_src_001208_000040267ms_int3.jpg",
       "bbox_xyxy": [
         322,
         0,
@@ -1784,7 +1784,7 @@
     {
       "identity": "f8",
       "reference": "f8/008_shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01269__all_d455_color_20260917_231331_342206_frame_000231_src_001611_000053700ms_int10.jpg",
       "bbox_xyxy": [
         1068,
         279,
@@ -1796,7 +1796,7 @@
     {
       "identity": "f8",
       "reference": "f8/009_shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
       "bbox_xyxy": [
         738,
         296,
@@ -1808,7 +1808,7 @@
     {
       "identity": "f8",
       "reference": "f8/010_shuffle_00951__f8_f10_d455_color_20260918_092743_198419_frame_000042_src_000303_000010100ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00951__f8_f10_d455_color_20260918_092743_198419_frame_000042_src_000303_000010100ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00951__f8_f10_d455_color_20260918_092743_198419_frame_000042_src_000303_000010100ms_int3.jpg",
       "bbox_xyxy": [
         1053,
         341,
@@ -1820,7 +1820,7 @@
     {
       "identity": "f8",
       "reference": "f8/011_shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
       "bbox_xyxy": [
         120,
         365,
@@ -1832,7 +1832,7 @@
     {
       "identity": "f8",
       "reference": "f8/012_shuffle_01906__f3_f6_f10_d455_color_20260918_091908_789202_frame_000095_src_000647_000021567ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01906__f3_f6_f10_d455_color_20260918_091908_789202_frame_000095_src_000647_000021567ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01906__f3_f6_f10_d455_color_20260918_091908_789202_frame_000095_src_000647_000021567ms_int7.jpg",
       "bbox_xyxy": [
         218,
         200,
@@ -1844,7 +1844,7 @@
     {
       "identity": "f8",
       "reference": "f8/013_shuffle_000012__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000097_src_000648_000021600ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000012__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000097_src_000648_000021600ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000012__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000097_src_000648_000021600ms_int10.jpg",
       "bbox_xyxy": [
         484,
         290,
@@ -1856,7 +1856,7 @@
     {
       "identity": "f8",
       "reference": "f8/014_shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
       "bbox_xyxy": [
         813,
         255,
@@ -1868,7 +1868,7 @@
     {
       "identity": "f8",
       "reference": "f8/015_shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00297__all_d455_color_20260917_230719_376025_frame_000064_src_000430_000014333ms_int3.jpg",
       "bbox_xyxy": [
         96,
         387,
@@ -1880,7 +1880,7 @@
     {
       "identity": "f8",
       "reference": "f8/016_shuffle_00709__f8_f10_d455_color_20260918_092443_643395_frame_000160_src_001161_000038700ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00709__f8_f10_d455_color_20260918_092443_643395_frame_000160_src_001161_000038700ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00709__f8_f10_d455_color_20260918_092443_643395_frame_000160_src_001161_000038700ms_int9.jpg",
       "bbox_xyxy": [
         536,
         210,
@@ -1892,7 +1892,7 @@
     {
       "identity": "f8",
       "reference": "f8/017_shuffle_01302__f8_f10_d455_color_20260918_092443_643395_frame_000304_src_002254_000075133ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01302__f8_f10_d455_color_20260918_092443_643395_frame_000304_src_002254_000075133ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01302__f8_f10_d455_color_20260918_092443_643395_frame_000304_src_002254_000075133ms_int10.jpg",
       "bbox_xyxy": [
         534,
         515,
@@ -1904,7 +1904,7 @@
     {
       "identity": "f8",
       "reference": "f8/018_shuffle_00970__f2_f5_f8_d455_color_20260918_093951_907387_frame_000039_src_000265_000008833ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00970__f2_f5_f8_d455_color_20260918_093951_907387_frame_000039_src_000265_000008833ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00970__f2_f5_f8_d455_color_20260918_093951_907387_frame_000039_src_000265_000008833ms_int5.jpg",
       "bbox_xyxy": [
         1022,
         130,
@@ -1916,7 +1916,7 @@
     {
       "identity": "f8",
       "reference": "f8/019_shuffle_01925__f8_f10_d455_color_20260918_092643_988225_frame_000125_src_000877_000029233ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01925__f8_f10_d455_color_20260918_092643_988225_frame_000125_src_000877_000029233ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01925__f8_f10_d455_color_20260918_092643_988225_frame_000125_src_000877_000029233ms_int3.jpg",
       "bbox_xyxy": [
         769,
         435,
@@ -1928,7 +1928,7 @@
     {
       "identity": "f8",
       "reference": "f8/020_shuffle_01340__f8_f10_d455_color_20260918_092443_643395_frame_000174_src_001264_000042133ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01340__f8_f10_d455_color_20260918_092443_643395_frame_000174_src_001264_000042133ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01340__f8_f10_d455_color_20260918_092443_643395_frame_000174_src_001264_000042133ms_int8.jpg",
       "bbox_xyxy": [
         674,
         72,
@@ -1940,7 +1940,7 @@
     {
       "identity": "f9",
       "reference": "f9/001_shuffle_01973__f9_d455_color_20260918_090044_165170_frame_000037_src_000259_000008633ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01973__f9_d455_color_20260918_090044_165170_frame_000037_src_000259_000008633ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01973__f9_d455_color_20260918_090044_165170_frame_000037_src_000259_000008633ms_int3.jpg",
       "bbox_xyxy": [
         502,
         137,
@@ -1952,7 +1952,7 @@
     {
       "identity": "f9",
       "reference": "f9/002_shuffle_00486__f9_d455_color_20260918_090313_145080_frame_000056_src_000392_000013067ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00486__f9_d455_color_20260918_090313_145080_frame_000056_src_000392_000013067ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00486__f9_d455_color_20260918_090313_145080_frame_000056_src_000392_000013067ms_int10.jpg",
       "bbox_xyxy": [
         115,
         291,
@@ -1964,7 +1964,7 @@
     {
       "identity": "f9",
       "reference": "f9/003_shuffle_000008__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000075_src_000493_000016433ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000008__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000075_src_000493_000016433ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000008__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000075_src_000493_000016433ms_int5.jpg",
       "bbox_xyxy": [
         1072,
         345,
@@ -1976,7 +1976,7 @@
     {
       "identity": "f9",
       "reference": "f9/004_shuffle_00290__all_d455_color_20260917_230436_260378_frame_000088_src_000617_000020567ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00290__all_d455_color_20260917_230436_260378_frame_000088_src_000617_000020567ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00290__all_d455_color_20260917_230436_260378_frame_000088_src_000617_000020567ms_int5.jpg",
       "bbox_xyxy": [
         1132,
         146,
@@ -1988,7 +1988,7 @@
     {
       "identity": "f9",
       "reference": "f9/005_shuffle_01564__f9_d455_color_20260918_090153_882102_frame_000028_src_000198_000006600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01564__f9_d455_color_20260918_090153_882102_frame_000028_src_000198_000006600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01564__f9_d455_color_20260918_090153_882102_frame_000028_src_000198_000006600ms_int5.jpg",
       "bbox_xyxy": [
         1002,
         215,
@@ -2000,7 +2000,7 @@
     {
       "identity": "f9",
       "reference": "f9/006_shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01904__all_d455_color_20260917_231331_342206_frame_000083_src_000587_000019567ms_int3.jpg",
       "bbox_xyxy": [
         84,
         555,
@@ -2012,7 +2012,7 @@
     {
       "identity": "f9",
       "reference": "f9/007_shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
       "bbox_xyxy": [
         153,
         465,
@@ -2024,7 +2024,7 @@
     {
       "identity": "f9",
       "reference": "f9/008_shuffle_00410__f9_d455_color_20260918_090233_294544_frame_000018_src_000129_000004300ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00410__f9_d455_color_20260918_090233_294544_frame_000018_src_000129_000004300ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00410__f9_d455_color_20260918_090233_294544_frame_000018_src_000129_000004300ms_int10.jpg",
       "bbox_xyxy": [
         248,
         259,
@@ -2036,7 +2036,7 @@
     {
       "identity": "f9",
       "reference": "f9/009_shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
       "bbox_xyxy": [
         825,
         159,
@@ -2048,7 +2048,7 @@
     {
       "identity": "f9",
       "reference": "f9/010_shuffle_01313__f9_d455_color_20260918_090044_165170_frame_000076_src_000537_000017900ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01313__f9_d455_color_20260918_090044_165170_frame_000076_src_000537_000017900ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01313__f9_d455_color_20260918_090044_165170_frame_000076_src_000537_000017900ms_int10.jpg",
       "bbox_xyxy": [
         860,
         123,
@@ -2060,7 +2060,7 @@
     {
       "identity": "f9",
       "reference": "f9/011_shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
       "bbox_xyxy": [
         89,
         346,
@@ -2072,7 +2072,7 @@
     {
       "identity": "f9",
       "reference": "f9/012_shuffle_01574__f9_d455_color_20260918_090313_145080_frame_000128_src_000924_000030800ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01574__f9_d455_color_20260918_090313_145080_frame_000128_src_000924_000030800ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01574__f9_d455_color_20260918_090313_145080_frame_000128_src_000924_000030800ms_int8.jpg",
       "bbox_xyxy": [
         930,
         491,
@@ -2084,7 +2084,7 @@
     {
       "identity": "f9",
       "reference": "f9/013_shuffle_00550__f9_d455_color_20260918_090044_165170_frame_000070_src_000503_000016767ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00550__f9_d455_color_20260918_090044_165170_frame_000070_src_000503_000016767ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00550__f9_d455_color_20260918_090044_165170_frame_000070_src_000503_000016767ms_int5.jpg",
       "bbox_xyxy": [
         1093,
         0,
@@ -2096,7 +2096,7 @@
     {
       "identity": "f9",
       "reference": "f9/014_shuffle_00158__f9_d455_color_20260918_090313_145080_frame_000055_src_000385_000012833ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00158__f9_d455_color_20260918_090313_145080_frame_000055_src_000385_000012833ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00158__f9_d455_color_20260918_090313_145080_frame_000055_src_000385_000012833ms_int7.jpg",
       "bbox_xyxy": [
         148,
         284,
@@ -2108,7 +2108,7 @@
     {
       "identity": "f9",
       "reference": "f9/015_shuffle_000012__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000097_src_000648_000021600ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_000012__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000097_src_000648_000021600ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_000012__k5k10f6f7f8f9f10_d455_color_20260920_165647_453284_frame_000097_src_000648_000021600ms_int10.jpg",
       "bbox_xyxy": [
         471,
         538,
@@ -2120,7 +2120,7 @@
     {
       "identity": "f9",
       "reference": "f9/016_shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
       "bbox_xyxy": [
         378,
         407,
@@ -2132,7 +2132,7 @@
     {
       "identity": "f9",
       "reference": "f9/017_shuffle_01413__f9_d455_color_20260918_090153_882102_frame_000029_src_000203_000006767ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01413__f9_d455_color_20260918_090153_882102_frame_000029_src_000203_000006767ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01413__f9_d455_color_20260918_090153_882102_frame_000029_src_000203_000006767ms_int9.jpg",
       "bbox_xyxy": [
         961,
         216,
@@ -2144,7 +2144,7 @@
     {
       "identity": "f9",
       "reference": "f9/018_shuffle_00017__all_d455_color_20260917_231331_342206_frame_000003_src_000020_000000667ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00017__all_d455_color_20260917_231331_342206_frame_000003_src_000020_000000667ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00017__all_d455_color_20260917_231331_342206_frame_000003_src_000020_000000667ms_int10.jpg",
       "bbox_xyxy": [
         281,
         446,
@@ -2156,7 +2156,7 @@
     {
       "identity": "f9",
       "reference": "f9/019_shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01924__all_d455_color_20260917_231118_960305_frame_000106_src_000722_000024067ms_int5.jpg",
       "bbox_xyxy": [
         200,
         258,
@@ -2168,7 +2168,7 @@
     {
       "identity": "f9",
       "reference": "f9/020_shuffle_01250__f9_d455_color_20260918_090233_294544_frame_000016_src_000114_000003800ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01250__f9_d455_color_20260918_090233_294544_frame_000016_src_000114_000003800ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01250__f9_d455_color_20260918_090233_294544_frame_000016_src_000114_000003800ms_int7.jpg",
       "bbox_xyxy": [
         359,
         247,
@@ -2180,7 +2180,7 @@
     {
       "identity": "f10",
       "reference": "f10/001_shuffle_01913__f8_f10_d455_color_20260918_092743_198419_frame_000074_src_000518_000017267ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01913__f8_f10_d455_color_20260918_092743_198419_frame_000074_src_000518_000017267ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01913__f8_f10_d455_color_20260918_092743_198419_frame_000074_src_000518_000017267ms_int10.jpg",
       "bbox_xyxy": [
         0,
         259,
@@ -2192,7 +2192,7 @@
     {
       "identity": "f10",
       "reference": "f10/002_shuffle_01197__f3_f6_f10_d455_color_20260918_091908_789202_frame_000209_src_001420_000047333ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01197__f3_f6_f10_d455_color_20260918_091908_789202_frame_000209_src_001420_000047333ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01197__f3_f6_f10_d455_color_20260918_091908_789202_frame_000209_src_001420_000047333ms_int5.jpg",
       "bbox_xyxy": [
         621,
         0,
@@ -2204,7 +2204,7 @@
     {
       "identity": "f10",
       "reference": "f10/003_shuffle_00148__f3_f6_f10_d455_color_20260918_092141_536480_frame_000060_src_000415_000013833ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00148__f3_f6_f10_d455_color_20260918_092141_536480_frame_000060_src_000415_000013833ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00148__f3_f6_f10_d455_color_20260918_092141_536480_frame_000060_src_000415_000013833ms_int10.jpg",
       "bbox_xyxy": [
         847,
         99,
@@ -2216,7 +2216,7 @@
     {
       "identity": "f10",
       "reference": "f10/004_shuffle_02015__f8_f10_d455_color_20260918_092443_643395_frame_000152_src_001105_000036833ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_02015__f8_f10_d455_color_20260918_092443_643395_frame_000152_src_001105_000036833ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_02015__f8_f10_d455_color_20260918_092443_643395_frame_000152_src_001105_000036833ms_int5.jpg",
       "bbox_xyxy": [
         809,
         444,
@@ -2228,7 +2228,7 @@
     {
       "identity": "f10",
       "reference": "f10/005_shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01673__all_d455_color_20260917_230436_260378_frame_000103_src_000736_000024533ms_int5.jpg",
       "bbox_xyxy": [
         871,
         153,
@@ -2240,7 +2240,7 @@
     {
       "identity": "f10",
       "reference": "f10/006_shuffle_01982__f8_f10_d455_color_20260918_092643_988225_frame_000049_src_000340_000011333ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01982__f8_f10_d455_color_20260918_092643_988225_frame_000049_src_000340_000011333ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01982__f8_f10_d455_color_20260918_092643_988225_frame_000049_src_000340_000011333ms_int10.jpg",
       "bbox_xyxy": [
         73,
         156,
@@ -2252,7 +2252,7 @@
     {
       "identity": "f10",
       "reference": "f10/007_shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00545__all_d455_color_20260917_230330_750162_frame_000103_src_000709_000023633ms_int10.jpg",
       "bbox_xyxy": [
         832,
         52,
@@ -2264,7 +2264,7 @@
     {
       "identity": "f10",
       "reference": "f10/008_shuffle_01473__f2_f5_f8_d455_color_20260918_093604_648930_frame_000230_src_001635_000054500ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01473__f2_f5_f8_d455_color_20260918_093604_648930_frame_000230_src_001635_000054500ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01473__f2_f5_f8_d455_color_20260918_093604_648930_frame_000230_src_001635_000054500ms_int9.jpg",
       "bbox_xyxy": [
         468,
         53,
@@ -2276,7 +2276,7 @@
     {
       "identity": "f10",
       "reference": "f10/009_shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01863__all_d455_color_20260917_231331_342206_frame_000079_src_000566_000018867ms_int3.jpg",
       "bbox_xyxy": [
         0,
         613,
@@ -2288,7 +2288,7 @@
     {
       "identity": "f10",
       "reference": "f10/010_shuffle_00599__f2_f5_f8_d455_color_20260918_093758_773465_frame_000162_src_001160_000038667ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00599__f2_f5_f8_d455_color_20260918_093758_773465_frame_000162_src_001160_000038667ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00599__f2_f5_f8_d455_color_20260918_093758_773465_frame_000162_src_001160_000038667ms_int10.jpg",
       "bbox_xyxy": [
         427,
         610,
@@ -2300,7 +2300,7 @@
     {
       "identity": "f10",
       "reference": "f10/011_shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01310__all_d455_color_20260917_231118_960305_frame_000032_src_000228_000007600ms_int5.jpg",
       "bbox_xyxy": [
         182,
         556,
@@ -2312,7 +2312,7 @@
     {
       "identity": "f10",
       "reference": "f10/012_shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00849__all_d455_color_20260917_230719_376025_frame_000059_src_000397_000013233ms_int5.jpg",
       "bbox_xyxy": [
         154,
         343,
@@ -2324,7 +2324,7 @@
     {
       "identity": "f10",
       "reference": "f10/013_shuffle_00993__f8_f10_d455_color_20260918_092743_198419_frame_000083_src_000579_000019300ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00993__f8_f10_d455_color_20260918_092743_198419_frame_000083_src_000579_000019300ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00993__f8_f10_d455_color_20260918_092743_198419_frame_000083_src_000579_000019300ms_int10.jpg",
       "bbox_xyxy": [
         144,
         431,
@@ -2336,7 +2336,7 @@
     {
       "identity": "f10",
       "reference": "f10/014_shuffle_00948__f3_f6_f10_d455_color_20260918_091908_789202_frame_000174_src_001193_000039767ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00948__f3_f6_f10_d455_color_20260918_091908_789202_frame_000174_src_001193_000039767ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00948__f3_f6_f10_d455_color_20260918_091908_789202_frame_000174_src_001193_000039767ms_int10.jpg",
       "bbox_xyxy": [
         191,
         0,
@@ -2348,7 +2348,7 @@
     {
       "identity": "f10",
       "reference": "f10/015_shuffle_00835__f3_f6_f10_d455_color_20260918_092141_536480_frame_000023_src_000172_000005733ms_int7.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00835__f3_f6_f10_d455_color_20260918_092141_536480_frame_000023_src_000172_000005733ms_int7.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00835__f3_f6_f10_d455_color_20260918_092141_536480_frame_000023_src_000172_000005733ms_int7.jpg",
       "bbox_xyxy": [
         1172,
         33,
@@ -2360,7 +2360,7 @@
     {
       "identity": "f10",
       "reference": "f10/016_shuffle_00709__f8_f10_d455_color_20260918_092443_643395_frame_000160_src_001161_000038700ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00709__f8_f10_d455_color_20260918_092443_643395_frame_000160_src_001161_000038700ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00709__f8_f10_d455_color_20260918_092443_643395_frame_000160_src_001161_000038700ms_int9.jpg",
       "bbox_xyxy": [
         890,
         355,
@@ -2372,7 +2372,7 @@
     {
       "identity": "f10",
       "reference": "f10/017_shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01050__all_d455_color_20260917_230436_260378_frame_000234_src_001595_000053167ms_int9.jpg",
       "bbox_xyxy": [
         296,
         498,
@@ -2384,7 +2384,7 @@
     {
       "identity": "f10",
       "reference": "f10/018_shuffle_00490__f8_f10_d455_color_20260918_092643_988225_frame_000045_src_000315_000010500ms_int3.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_00490__f8_f10_d455_color_20260918_092643_988225_frame_000045_src_000315_000010500ms_int3.jpg",
+      "source_image": "../trainv5/images/train/shuffle_00490__f8_f10_d455_color_20260918_092643_988225_frame_000045_src_000315_000010500ms_int3.jpg",
       "bbox_xyxy": [
         118,
         159,
@@ -2396,7 +2396,7 @@
     {
       "identity": "f10",
       "reference": "f10/019_shuffle_01658__all_d455_color_20260917_230330_750162_frame_000074_src_000485_000016167ms_int8.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01658__all_d455_color_20260917_230330_750162_frame_000074_src_000485_000016167ms_int8.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01658__all_d455_color_20260917_230330_750162_frame_000074_src_000485_000016167ms_int8.jpg",
       "bbox_xyxy": [
         754,
         93,
@@ -2408,7 +2408,7 @@
     {
       "identity": "f10",
       "reference": "f10/020_shuffle_01127__f8_f10_d455_color_20260918_092443_643395_frame_000158_src_001141_000038033ms_int10.jpg",
-      "source_image": "/home/j/trainv5/images/train/shuffle_01127__f8_f10_d455_color_20260918_092443_643395_frame_000158_src_001141_000038033ms_int10.jpg",
+      "source_image": "../trainv5/images/train/shuffle_01127__f8_f10_d455_color_20260918_092443_643395_frame_000158_src_001141_000038033ms_int10.jpg",
       "bbox_xyxy": [
         906,
         297,

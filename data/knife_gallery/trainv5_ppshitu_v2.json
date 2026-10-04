@@ -2,10 +2,10 @@
   "schema": "knife_feature_gallery.v1",
   "backend": "PaddleClas PP-ShiTuV2 + Faiss IndexFlatIP",
   "upstream_commit": "f1233c18455b8acde4fc42ab0bea575fa06daa8e",
-  "model": "/home/j/insight_cup/models/knife/ppshitu_v2_retrieval/inference.onnx",
+  "model": "models/knife/ppshitu_v2_retrieval/inference.onnx",
   "model_sha256": "ec7a0131ab31c639a444d9b5d3efec28adb5fb0a2cfe038e1d3883ec4725af22",
-  "dataset_root": "/home/j/insight_cup/data/knife_dataset/trainv5_grouped",
-  "gallery": "/home/j/insight_cup/data/knife_gallery/trainv5_ppshitu_v2.npz",
+  "dataset_root": "data/knife_dataset/trainv5_grouped",
+  "gallery": "data/knife_gallery/trainv5_ppshitu_v2.npz",
   "references": 2296,
   "embedding_size": 512,
   "label_counts": {

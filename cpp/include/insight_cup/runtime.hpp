@@ -2,7 +2,7 @@
 
 #include <deque>
 #include <filesystem>
-#include <map>
+#include <fstream>
 #include <memory>
 #include <optional>
 #include <string>
@@ -44,11 +44,14 @@ class RecognitionRuntime {
                        std::optional<double> sourceTimeMs);
   void drainStage2();
   void writeFinalStage2Event(const FinalStage2Result& result);
-  std::optional<std::string> saveCrop(const DetectedRegion& region);
+  std::optional<std::string> saveCrop(const Stage1Detection& detection,
+                                      const cv::Mat& crop);
   json buildEvent(const DetectedRegion& region,
-                  const Stage2Resolution& resolution, const cv::Mat& frame,
+                  const Stage2Resolution& resolution, const cv::Size& frameSize,
                   int processedIndex, const std::string& sourceLabel,
                   std::optional<double> sourceTimeMs, double yoloMs) const;
+  json buildShadowEvent(const Stage2Resolution& resolution) const;
+  void writeShadowEvent(const Stage2Resolution& resolution);
   void drawResult(cv::Mat& image, const DetectedRegion& region,
                   const Stage2Decision& decision) const;
   void writeManifest() const;
@@ -68,11 +71,13 @@ class RecognitionRuntime {
   std::vector<std::string> mediaOutputs_;
   std::deque<double> frameIntervalsMs_;
   std::optional<std::chrono::steady_clock::time_point> lastFrameCompletedAt_;
-  cv::Mat lastEventFrame_;
+  cv::Size lastEventFrameSize_;
   std::optional<int> lastProcessedIndex_;
   std::optional<std::string> lastSourceLabel_;
   std::optional<double> lastSourceTimeMs_;
-  std::map<int, YoloDebugInfo> trackDebug_;
+  std::ofstream shadowStream_;
+  json shadowInput_ = json::object();
+  std::size_t shadowRecordCount_ = 0;
 };
 
 }  // namespace insight_cup

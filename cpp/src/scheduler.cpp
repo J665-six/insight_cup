@@ -375,8 +375,8 @@ struct Track {
   std::optional<Stage2Decision> decision;
   std::optional<int> resultFrame;
   std::optional<std::string> resultDetectionId;
-  std::optional<Stage1Detection> resultDetection;
   std::optional<std::string> resultCropPath;
+  std::shared_ptr<const Stage2Evidence> resultEvidence;
   double inferenceMs = 0.0;
   int revision = 0;
   int emittedRevision = 0;
@@ -397,6 +397,23 @@ std::tuple<float, float, float, float> boxGeometry(const Box& box) {
   const float height = std::max(1, box.height());
   return {(box.x1 + box.x2) * 0.5F, (box.y1 + box.y2) * 0.5F, width,
           height};
+}
+
+std::shared_ptr<const Stage2Evidence> makeEvidence(
+    Stage1Detection source, const YoloDebugInfo& debug,
+    std::shared_ptr<const std::map<std::string, float>> yoloClassScores,
+    const Stage2Decision& rawDecision) {
+  source.crop.release();
+  auto evidence = std::make_shared<Stage2Evidence>();
+  evidence->source = std::move(source);
+  evidence->debug = debug;
+  if (yoloClassScores) {
+    auto shadow = std::make_shared<Stage2ShadowPayload>();
+    shadow->yoloClassScores = std::move(yoloClassScores);
+    shadow->rawDecision = rawDecision;
+    evidence->shadow = std::move(shadow);
+  }
+  return evidence;
 }
 
 }  // namespace
@@ -426,14 +443,19 @@ class AsyncStage2Scheduler::Impl {
   }
 
   std::vector<Stage2Resolution> resolveFrame(
-      const std::vector<Stage1Detection>& detections,
+      const std::vector<DetectedRegion>& regions,
       const RecognizeFunction& recognize,
       const std::vector<PrepareJob>& prepareJobs) {
-    if (detections.empty()) {
+    if (regions.empty()) {
       return {};
     }
-    if (detections.size() != prepareJobs.size()) {
+    if (regions.size() != prepareJobs.size()) {
       throw std::runtime_error("Prepare jobs must match detection count");
+    }
+    std::vector<Stage1Detection> detections;
+    detections.reserve(regions.size());
+    for (const auto& region : regions) {
+      detections.push_back(region.handoff);
     }
     for (const auto& detection : detections) {
       if (detection.frameIndex != detections.front().frameIndex) {
@@ -444,18 +466,34 @@ class AsyncStage2Scheduler::Impl {
       std::vector<Stage2Resolution> direct;
       direct.reserve(detections.size());
       for (std::size_t index = 0; index < detections.size(); ++index) {
+        Stage1Detection preparedDetection = detections[index];
         std::optional<std::string> cropPath;
         if (detections[index].majorClass != "b0" && prepareJobs[index]) {
-          cropPath = prepareJobs[index]();
+          PreparedStage2Input prepared = prepareJobs[index]();
+          preparedDetection.crop = std::move(prepared.crop);
+          cropPath = std::move(prepared.cropPath);
         }
         const auto started = Clock::now();
-        Stage2Decision decision = recognize(detections[index]);
-        direct.push_back({std::move(decision), "direct",
-                          std::chrono::duration<double, std::milli>(Clock::now() -
-                                                                   started)
-                              .count(),
-                          std::nullopt, std::nullopt,
-                          detections[index].detectionId, cropPath});
+        Stage2Decision decision = recognize(preparedDetection);
+        const double inferenceMs =
+            std::chrono::duration<double, std::milli>(Clock::now() - started)
+                .count();
+        std::shared_ptr<const Stage2Evidence> evidence;
+        if (regions[index].shadowClassScores &&
+            preparedDetection.majorClass != "b0") {
+          evidence = makeEvidence(preparedDetection, regions[index].debug,
+                                  regions[index].shadowClassScores, decision);
+        }
+        Stage2Resolution resolution{
+            std::move(decision),
+            "direct",
+            inferenceMs,
+            std::nullopt,
+            std::nullopt,
+            detections[index].detectionId,
+            cropPath,
+            std::move(evidence)};
+        direct.push_back(std::move(resolution));
       }
       return direct;
     }
@@ -466,7 +504,7 @@ class AsyncStage2Scheduler::Impl {
       if (detections[index].majorClass == "b0") {
         const auto started = Clock::now();
         Stage2Decision decision = recognize(detections[index]);
-        results[index] = Stage2Resolution{
+        Stage2Resolution resolution{
             std::move(decision),
             "direct",
             std::chrono::duration<double, std::milli>(Clock::now() - started)
@@ -474,7 +512,9 @@ class AsyncStage2Scheduler::Impl {
             std::nullopt,
             std::nullopt,
             detections[index].detectionId,
-            std::nullopt};
+            std::nullopt,
+            nullptr};
+        results[index] = std::move(resolution);
       } else {
         asyncIndexes.push_back(index);
       }
@@ -493,7 +533,9 @@ class AsyncStage2Scheduler::Impl {
     for (std::size_t position = 0; position < asyncIndexes.size(); ++position) {
       const std::size_t index = asyncIndexes[position];
       results[index] = resolveTrack(associated[position], detections[index],
-                                    recognize, prepareJobs[index]);
+                                    regions[index].debug,
+                                    regions[index].shadowClassScores, recognize,
+                                    prepareJobs[index]);
     }
     std::vector<Stage2Resolution> resolved;
     resolved.reserve(results.size());
@@ -523,7 +565,7 @@ class AsyncStage2Scheduler::Impl {
     std::vector<FinalStage2Result> output;
     for (const auto& [trackId, track] : tracks_) {
       (void)trackId;
-      if (!track->decision || !track->resultDetection ||
+      if (!track->decision || !track->resultEvidence ||
           track->revision <= track->emittedRevision) {
         continue;
       }
@@ -535,7 +577,9 @@ class AsyncStage2Scheduler::Impl {
       resolution.trackId = track->trackId;
       resolution.sourceDetectionId = track->resultDetectionId;
       resolution.sourceCropPath = track->resultCropPath;
-      output.push_back({std::move(resolution), *track->resultDetection});
+      resolution.evidence = track->resultEvidence;
+      output.push_back(
+          {std::move(resolution), track->resultEvidence->source});
     }
     return output;
   }
@@ -715,7 +759,10 @@ class AsyncStage2Scheduler::Impl {
   }
 
   void submit(const std::shared_ptr<Track>& track,
-              const Stage1Detection& detection,
+              Stage1Detection detection,
+              const YoloDebugInfo& debug,
+              std::shared_ptr<const std::map<std::string, float>>
+                  yoloClassScores,
               const RecognizeFunction& recognize,
               const std::optional<std::string>& cropPath) {
     if (closed_ || track->inFlight) {
@@ -726,7 +773,9 @@ class AsyncStage2Scheduler::Impl {
     track->inFlight = true;
     const int trackId = track->trackId;
     ThreadPool* pool = detection.majorClass == "f" ? facePool_.get() : knifePool_.get();
-    pool->submit([this, trackId, token, detection, recognize, cropPath] {
+    pool->submit([this, trackId, token, detection = std::move(detection),
+                  debug, yoloClassScores = std::move(yoloClassScores), recognize,
+                  cropPath] {
       const auto started = Clock::now();
       Stage2Decision decision;
       try {
@@ -747,13 +796,14 @@ class AsyncStage2Scheduler::Impl {
       }
       auto& current = found->second;
       current->inFlight = false;
+      auto evidence = makeEvidence(detection, debug, yoloClassScores, decision);
       current->decision = current->smoother
                               ? current->smoother->update(decision)
                               : std::optional<Stage2Decision>(decision);
       current->resultFrame = detection.frameIndex;
       current->resultDetectionId = detection.detectionId;
-      current->resultDetection = detection;
       current->resultCropPath = cropPath;
+      current->resultEvidence = std::move(evidence);
       current->inferenceMs = inferenceMs;
       ++current->revision;
       idleCondition_.notify_all();
@@ -762,6 +812,9 @@ class AsyncStage2Scheduler::Impl {
 
   Stage2Resolution resolveTrack(const std::shared_ptr<Track>& track,
                                 const Stage1Detection& detection,
+                                const YoloDebugInfo& debug,
+                                std::shared_ptr<const std::map<std::string, float>>
+                                    yoloClassScores,
                                 const RecognizeFunction& recognize,
                                 const PrepareJob& prepareJob) {
     const std::optional<int> resultAge =
@@ -776,30 +829,36 @@ class AsyncStage2Scheduler::Impl {
     const bool needsRefresh = !track->decision || !resultAge ||
                               *resultAge >= refreshInterval;
     if (needsRefresh && !track->inFlight) {
+      Stage1Detection preparedDetection = detection;
       std::optional<std::string> cropPath;
       if (prepareJob) {
-        cropPath = prepareJob();
+        PreparedStage2Input prepared = prepareJob();
+        preparedDetection.crop = std::move(prepared.crop);
+        cropPath = std::move(prepared.cropPath);
       }
-      submit(track, detection, recognize, cropPath);
+      submit(track, std::move(preparedDetection), debug,
+             std::move(yoloClassScores), recognize, cropPath);
     }
     if (!track->decision) {
       Stage2Decision processing;
       processing.module = detection.majorClass == "f" ? "face" : "knife";
       processing.status = "processing";
       return {std::move(processing), "processing", 0.0, track->trackId,
-              std::nullopt, detection.detectionId, std::nullopt};
+              std::nullopt, detection.detectionId, std::nullopt, nullptr};
     }
     const bool fresh = track->revision > track->emittedRevision;
     if (fresh) {
       track->emittedRevision = track->revision;
     }
-    return {*track->decision,
-            fresh ? "fresh" : "cached",
-            fresh ? track->inferenceMs : 0.0,
-            track->trackId,
-            resultAge,
-            track->resultDetectionId,
-            track->resultCropPath};
+    Stage2Resolution resolution{*track->decision,
+                                fresh ? "fresh" : "cached",
+                                fresh ? track->inferenceMs : 0.0,
+                                track->trackId,
+                                resultAge,
+                                track->resultDetectionId,
+                                track->resultCropPath,
+                                fresh ? track->resultEvidence : nullptr};
+    return resolution;
   }
 
   int refreshFrames_ = 15;
@@ -838,10 +897,10 @@ AsyncStage2Scheduler::AsyncStage2Scheduler(
 AsyncStage2Scheduler::~AsyncStage2Scheduler() { close(); }
 
 std::vector<Stage2Resolution> AsyncStage2Scheduler::resolveFrame(
-    const std::vector<Stage1Detection>& detections,
+    const std::vector<DetectedRegion>& regions,
     const RecognizeFunction& recognize,
     const std::vector<PrepareJob>& prepareJobs) {
-  return impl_->resolveFrame(detections, recognize, prepareJobs);
+  return impl_->resolveFrame(regions, recognize, prepareJobs);
 }
 
 bool AsyncStage2Scheduler::waitForIdle(std::chrono::milliseconds timeout) {

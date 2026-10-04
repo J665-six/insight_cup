@@ -49,15 +49,15 @@
         <strong><span id="latencyValue">0.0</span><small> ms</small></strong>
       </div>
       <div class="metric major-b0">
-        <span class="metric-label">b0</span>
+        <span class="metric-label">候选 b0</span>
         <strong id="b0Count">0</strong>
       </div>
       <div class="metric major-f">
-        <span class="metric-label">f</span>
+        <span class="metric-label">候选 f</span>
         <strong id="fCount">0</strong>
       </div>
       <div class="metric major-k">
-        <span class="metric-label">k</span>
+        <span class="metric-label">候选 k</span>
         <strong id="kCount">0</strong>
       </div>
     </section>
@@ -69,7 +69,7 @@
             <h2>实时标注画面</h2>
             <span id="frameLabel">帧 -</span>
           </div>
-          <span class="detection-badge"><strong id="frameDetectionCount">0</strong> 个目标</span>
+          <span class="detection-badge"><strong id="frameDetectionCount">0</strong> 个识别结果</span>
         </div>
         <div class="video-stage">
           <img id="liveFrame" alt="实时识别标注画面">
@@ -148,7 +148,7 @@
         </section>
 
         <section class="diagnostic-section result-section">
-          <div class="section-heading"><h2>二阶段结果</h2></div>
+          <div class="section-heading"><h2>二阶段诊断</h2></div>
           <div class="result-grid">
             <div><span>matched</span><strong id="matchedCount">0</strong></div>
             <div><span>unknown</span><strong id="unknownCount">0</strong></div>
@@ -162,7 +162,7 @@
     <section class="event-section">
       <div class="event-heading">
         <div>
-          <h2>最近识别事件</h2>
+          <h2>最近正式识别</h2>
           <span id="eventCount">0 条</span>
         </div>
         <span class="error-message" id="errorMessage" role="status"></span>
@@ -191,4 +191,3 @@
   <script src="/app.js" defer></script>
 </body>
 </html>
-

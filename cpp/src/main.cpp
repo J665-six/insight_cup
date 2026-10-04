@@ -34,14 +34,15 @@ int main(int argc, char** argv) {
     const fs::path sessionDirectory =
         createSessionDirectory(config.outputRoot, config.sessionId);
     RuntimeState state(!config.noUi);
-    state.configureSession(config.source, sessionDirectory.filename().string(),
-                           sessionDirectory);
+    state.configureSession(displayPath(config.source),
+                           sessionDirectory.filename().string(),
+                           displayPath(sessionDirectory));
     EventJournal journal(sessionDirectory / "events.jsonl", logger);
     RecognitionRuntime runtime(config, sessionDirectory, state, journal, logger);
 
     logger.info("SESSION id=" + sessionDirectory.filename().string() +
-                " source=" + config.source);
-    logger.info("OUTPUT path=" + sessionDirectory.string());
+                " source=" + displayPath(config.source));
+    logger.info("OUTPUT path=" + displayPath(sessionDirectory));
 
     std::signal(SIGINT, handleSignal);
     std::signal(SIGTERM, handleSignal);

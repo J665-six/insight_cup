@@ -1,9 +1,14 @@
 #include "insight_cup/runtime.hpp"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
+#include <fstream>
 #include <iomanip>
+#include <memory>
+#include <random>
 #include <regex>
 #include <set>
 #include <sstream>
@@ -13,6 +18,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
+#include <openssl/evp.h>
 
 #if INSIGHT_CUP_HAS_REALSENSE
 #include <librealsense2/rs.hpp>
@@ -35,6 +41,64 @@ std::string lower(std::string value) {
 
 bool isImagePath(const fs::path& path) {
   return kImageExtensions.count(lower(path.extension().string())) != 0;
+}
+
+bool isCameraIndexSource(const std::string& source) {
+  return !source.empty() &&
+         std::all_of(source.begin(), source.end(), [](unsigned char value) {
+           return std::isdigit(value);
+         });
+}
+
+bool looksLikeLocalPath(const std::string& source) {
+  if (source.empty()) {
+    return false;
+  }
+  const fs::path path(source);
+  return path.is_absolute() || source.find('/') != std::string::npos ||
+         source.find('\\') != std::string::npos || isImagePath(path) ||
+         isVideoSource(source);
+}
+
+void validateLocalSourcePath(const std::string& source) {
+  if (isRealSenseSource(source) || isCameraIndexSource(source) ||
+      !looksLikeLocalPath(source)) {
+    return;
+  }
+  std::error_code error;
+  const bool exists = fs::exists(source, error);
+  if (error) {
+    throw std::runtime_error("Could not inspect source path: " +
+                             displayPath(source) + " (" + error.message() +
+                             ")");
+  }
+  if (!exists) {
+    throw std::runtime_error("Source path does not exist: " +
+                             displayPath(source));
+  }
+}
+
+json displayPathsInJson(const json& value) {
+  if (value.is_string()) {
+    const std::string text = value.get<std::string>();
+    const fs::path path(text);
+    return path.is_absolute() ? json(displayPath(path)) : value;
+  }
+  if (value.is_array()) {
+    json result = json::array();
+    for (const auto& item : value) {
+      result.push_back(displayPathsInJson(item));
+    }
+    return result;
+  }
+  if (value.is_object()) {
+    json result = json::object();
+    for (auto iterator = value.begin(); iterator != value.end(); ++iterator) {
+      result[iterator.key()] = displayPathsInJson(iterator.value());
+    }
+    return result;
+  }
+  return value;
 }
 
 double elapsedMs(const Clock::time_point& started) {
@@ -82,6 +146,82 @@ cv::Scalar classColor(const std::string& majorClass) {
   return {67, 75, 218};
 }
 
+bool isAcceptedDecision(const Stage2Decision& decision) {
+  return decision.predictedClass.has_value() &&
+         (decision.status == "matched" || decision.status == "passthrough");
+}
+
+std::string sha256File(const fs::path& path) {
+  std::ifstream stream(path, std::ios::binary);
+  if (!stream) {
+    throw std::runtime_error("Could not open shadow input for hashing: " +
+                             displayPath(path));
+  }
+  std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> context(
+      EVP_MD_CTX_new(), &EVP_MD_CTX_free);
+  if (!context || EVP_DigestInit_ex(context.get(), EVP_sha256(), nullptr) != 1) {
+    throw std::runtime_error("Could not initialize SHA-256 for shadow input");
+  }
+
+  std::array<char, 64 * 1024> buffer{};
+  while (stream) {
+    stream.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+    const std::streamsize count = stream.gcount();
+    if (count > 0 &&
+        EVP_DigestUpdate(context.get(), buffer.data(),
+                         static_cast<std::size_t>(count)) != 1) {
+      throw std::runtime_error("Could not hash shadow input: " +
+                               displayPath(path));
+    }
+  }
+  if (!stream.eof()) {
+    throw std::runtime_error("Could not read shadow input for hashing: " +
+                             displayPath(path));
+  }
+
+  std::array<unsigned char, EVP_MAX_MD_SIZE> digest{};
+  unsigned int digestSize = 0;
+  if (EVP_DigestFinal_ex(context.get(), digest.data(), &digestSize) != 1) {
+    throw std::runtime_error("Could not finish SHA-256 for shadow input");
+  }
+  std::ostringstream encoded;
+  encoded << std::hex << std::setfill('0');
+  for (unsigned int index = 0; index < digestSize; ++index) {
+    encoded << std::setw(2) << static_cast<unsigned int>(digest[index]);
+  }
+  return encoded.str();
+}
+
+std::string captureId() {
+  std::random_device entropy;
+  std::ostringstream value;
+  value << std::hex << std::setfill('0')
+        << std::setw(16)
+        << std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  for (int index = 0; index < 4; ++index) {
+    value << std::setw(8) << entropy();
+  }
+  return value.str();
+}
+
+json shadowInputProvenance(const RuntimeConfig& config) {
+  const fs::path source(config.source);
+  std::error_code error;
+  const bool cameraIndex =
+      !config.source.empty() &&
+      std::all_of(config.source.begin(), config.source.end(),
+                  [](unsigned char value) { return std::isdigit(value); });
+  if (!isRealSenseSource(config.source) && !cameraIndex &&
+      fs::is_regular_file(source, error) && !error) {
+    return {{"kind", "file"},
+            {"sha256", sha256File(source)},
+            {"video_stride", config.videoStride}};
+  }
+  return {{"kind", "capture"},
+          {"capture_id", captureId()},
+          {"video_stride", config.videoStride}};
+}
+
 }  // namespace
 
 fs::path createSessionDirectory(const fs::path& outputRoot,
@@ -124,12 +264,34 @@ RecognitionRuntime::RecognitionRuntime(RuntimeConfig config,
       state_(state),
       journal_(journal),
       logger_(logger) {
-  cv::setNumThreads(4);
+  // Keep OpenCV from creating a second thread pool on the small ARM board.
+  // ONNX sessions are already explicitly bounded by the per-model settings.
+  int cvThreads = 1;
+  if (const char* value = std::getenv("INSIGHT_CUP_OPENCV_THREADS")) {
+    try {
+      cvThreads = std::max(1, std::stoi(value));
+    } catch (...) {
+      cvThreads = 1;
+    }
+  }
+  cv::setNumThreads(cvThreads);
+  if (config_.shadowLog) {
+    shadowInput_ = shadowInputProvenance(config_);
+    const fs::path path = sessionDirectory_ / "shadow.jsonl";
+    shadowStream_.open(path, std::ios::binary | std::ios::trunc);
+    if (!shadowStream_) {
+      throw std::runtime_error("Could not open shadow journal: " +
+                               displayPath(path));
+    }
+  }
 }
 
 RecognitionRuntime::~RecognitionRuntime() {
   if (scheduler_) {
     scheduler_->close();
+  }
+  if (shadowStream_.is_open()) {
+    shadowStream_.close();
   }
 }
 
@@ -137,6 +299,7 @@ void RecognitionRuntime::run() {
   writeManifest();
   try {
     config_.validate();
+    validateLocalSourcePath(config_.source);
     state_.setStatus("loading");
     loadModels();
     writeManifest();
@@ -144,6 +307,12 @@ void RecognitionRuntime::run() {
       state_.setStatus("stopped");
     } else {
       state_.setStatus("running");
+      if (config_.startPaused) {
+        const auto [accepted, message] = state_.control("pause");
+        if (!accepted) {
+          throw std::runtime_error("Could not start runtime paused: " + message);
+        }
+      }
       runSource();
       drainStage2();
       state_.setStatus(state_.stopRequested() ? "stopped" : "completed");
@@ -158,29 +327,42 @@ void RecognitionRuntime::run() {
   }
   writeSummary();
   journal_.close();
+  if (shadowStream_.is_open()) {
+    shadowStream_.close();
+  }
 }
 
 void RecognitionRuntime::loadModels() {
-  state_.setModule("yolo", "loading", config_.weights.string());
-  logger_.info("LOAD module=yolo model=" + config_.weights.string());
+  state_.setModule("yolo", "loading", displayPath(config_.weights));
+  logger_.info("LOAD module=yolo model=" + displayPath(config_.weights));
   auto started = Clock::now();
   detector_ = std::make_unique<YoloDetector>(config_);
   double loadMs = elapsedMs(started);
   modelMetadata_["yolo"] = detector_->metadata();
-  state_.setModule("yolo", "ready", fixed(loadMs, 0) + " ms");
-  logger_.info("READY module=yolo load_ms=" + fixed(loadMs));
+  const std::string yoloDevice = modelMetadata_["yolo"].value("device", "unknown");
+  const std::string yoloBackend =
+      modelMetadata_["yolo"].value("backend", "unknown");
+  state_.setModule("yolo", "ready",
+                   yoloDevice + " / " + fixed(loadMs, 0) + " ms");
+  logger_.info("READY module=yolo backend=" + yoloBackend +
+               " device=" + yoloDevice + " load_ms=" + fixed(loadMs));
 
-  state_.setModule("face", "loading", config_.faceGallery.string());
-  logger_.info("LOAD module=face gallery=" + config_.faceGallery.string() +
+  state_.setModule("face", "loading", displayPath(config_.faceGallery));
+  logger_.info("LOAD module=face gallery=" + displayPath(config_.faceGallery) +
                " model=" + config_.faceModelName);
   started = Clock::now();
   face_ = std::make_shared<FaceRecognizer>(config_);
   loadMs = elapsedMs(started);
   modelMetadata_["face"] = face_->metadata();
+  const std::string faceDevice = modelMetadata_["face"].value("device", "unknown");
+  const std::string faceBackend =
+      modelMetadata_["face"].value("backend", "unknown");
   state_.setModule("face", "ready",
-                   std::to_string(face_->identityCount()) + " identities / " +
+                   faceDevice + " / " + std::to_string(face_->identityCount()) +
+                       " identities / " +
                        fixed(loadMs, 0) + " ms");
-  logger_.info("READY module=face identities=" +
+  logger_.info("READY module=face backend=" + faceBackend +
+               " device=" + faceDevice + " identities=" +
                std::to_string(face_->identityCount()) + " references=" +
                std::to_string(face_->referenceCount()) + " load_ms=" +
                fixed(loadMs));
@@ -188,18 +370,23 @@ void RecognitionRuntime::loadModels() {
   const fs::path knifeSource = config_.knifeMode == "classification"
                                    ? config_.knifeModelDir
                                    : config_.knifeRetrievalModel;
-  state_.setModule("knife", "loading", knifeSource.string());
+  state_.setModule("knife", "loading", displayPath(knifeSource));
   logger_.info("LOAD module=knife mode=" + config_.knifeMode +
-               " model=" + knifeSource.string());
+               " model=" + displayPath(knifeSource));
   started = Clock::now();
   knife_ = std::make_shared<KnifeRecognizer>(config_);
   loadMs = elapsedMs(started);
   modelMetadata_["knife"] = knife_->metadata();
+  const std::string knifeDevice =
+      modelMetadata_["knife"].value("device", "unknown");
+  const std::string knifeBackend =
+      modelMetadata_["knife"].value("backend", "unknown");
   state_.setModule("knife", "ready",
-                   knife_->mode() + " / " +
+                   knifeDevice + " / " + knife_->mode() + " / " +
                        std::to_string(knife_->classCount()) + " classes / " +
                        fixed(loadMs, 0) + " ms");
-  logger_.info("READY module=knife mode=" + knife_->mode() + " classes=" +
+  logger_.info("READY module=knife backend=" + knifeBackend +
+               " device=" + knifeDevice + " mode=" + knife_->mode() + " classes=" +
                std::to_string(knife_->classCount()) + " load_ms=" +
                fixed(loadMs));
 
@@ -322,20 +509,22 @@ void RecognitionRuntime::runRealSense() {
       cv::Mat wrapped(color.get_height(), color.get_width(), CV_8UC3,
                       const_cast<void*>(color.get_data()),
                       static_cast<std::size_t>(color.get_stride_in_bytes()));
-      cv::Mat frame = wrapped.clone();
       if (!writer.isOpened() && config_.saveVideo) {
         const fs::path output = sessionDirectory_ / "annotated.mp4";
         writer.open(output.string(), cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
                     std::max(1.0, static_cast<double>(config_.cameraFps) /
                                       config_.videoStride),
-                    frame.size());
+                    wrapped.size());
         if (!writer.isOpened()) {
-          throw std::runtime_error("Could not write video: " + output.string());
+          throw std::runtime_error("Could not write video: " +
+                                   displayPath(output));
         }
-        mediaOutputs_.push_back(output.string());
+        mediaOutputs_.push_back(displayPath(output));
       }
+      // All model work and refresh-time crop copies finish before color leaves
+      // this scope, so the RealSense buffer can be consumed without a full-frame copy.
       cv::Mat annotated = processFrame(
-          frame, currentIndex, processedIndex, "realsense:" + serial,
+          wrapped, currentIndex, processedIndex, "realsense:" + serial,
           std::isfinite(color.get_timestamp())
               ? std::optional<double>(color.get_timestamp())
               : std::nullopt);
@@ -379,11 +568,13 @@ void RecognitionRuntime::runImages(const fs::path& source) {
     images.resize(*config_.maxFrames);
   }
   if (images.empty()) {
-    throw std::runtime_error("No supported images found: " + source.string());
+    throw std::runtime_error("No supported images found: " + displayPath(source));
   }
   state_.setSourceInfo({{"type", "images"}, {"total_frames", images.size()}});
   const fs::path outputDirectory = sessionDirectory_ / "annotated_images";
-  fs::create_directories(outputDirectory);
+  if (config_.saveVideo) {
+    fs::create_directories(outputDirectory);
+  }
   int processedIndex = 0;
   for (std::size_t frameIndex = 0; frameIndex < images.size(); ++frameIndex) {
     if (!state_.waitUntilRunnable()) {
@@ -391,32 +582,34 @@ void RecognitionRuntime::runImages(const fs::path& source) {
     }
     cv::Mat frame = cv::imread(images[frameIndex].string());
     if (frame.empty()) {
-      logger_.warning("SKIP source=" + images[frameIndex].string() +
+      logger_.warning("SKIP source=" + displayPath(images[frameIndex]) +
                       " reason=read_error");
       continue;
     }
     cv::Mat annotated = processFrame(frame, static_cast<int>(frameIndex),
-                                     processedIndex, images[frameIndex].string(),
+                                     processedIndex,
+                                     displayPath(images[frameIndex]),
                                      std::nullopt);
-    std::ostringstream filename;
-    filename << std::setfill('0') << std::setw(6) << frameIndex << '_'
-             << images[frameIndex].filename().string();
-    const fs::path destination = outputDirectory / filename.str();
-    if (!cv::imwrite(destination.string(), annotated)) {
-      throw std::runtime_error("Could not write annotated image: " +
-                               destination.string());
+    if (config_.saveVideo) {
+      if (annotated.empty()) {
+        throw std::runtime_error("Annotated image output was not generated");
+      }
+      std::ostringstream filename;
+      filename << std::setfill('0') << std::setw(6) << frameIndex << '_'
+               << images[frameIndex].filename().string();
+      const fs::path destination = outputDirectory / filename.str();
+      if (!cv::imwrite(destination.string(), annotated)) {
+        throw std::runtime_error("Could not write annotated image: " +
+                                 displayPath(destination));
+      }
+      mediaOutputs_.push_back(displayPath(destination));
     }
-    mediaOutputs_.push_back(destination.string());
     ++processedIndex;
   }
 }
 
 void RecognitionRuntime::runCapture() {
-  const bool cameraIndex = !config_.source.empty() &&
-                           std::all_of(config_.source.begin(), config_.source.end(),
-                                       [](unsigned char value) {
-                                         return std::isdigit(value);
-                                       });
+  const bool cameraIndex = isCameraIndexSource(config_.source);
   cv::VideoCapture capture;
   if (cameraIndex) {
     capture.open(std::stoi(config_.source));
@@ -424,7 +617,8 @@ void RecognitionRuntime::runCapture() {
     capture.open(config_.source);
   }
   if (!capture.isOpened()) {
-    throw std::runtime_error("Could not open source: " + config_.source);
+    throw std::runtime_error("Could not open source: " +
+                             displayPath(config_.source));
   }
   double sourceFps = capture.get(cv::CAP_PROP_FPS);
   if (!std::isfinite(sourceFps) || sourceFps < 1.0 || sourceFps > 240.0) {
@@ -471,13 +665,13 @@ void RecognitionRuntime::runCapture() {
       writer.open(output.string(), cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
                   std::max(1.0, sourceFps / config_.videoStride), frame.size());
       if (!writer.isOpened()) {
-        throw std::runtime_error("Could not write video: " + output.string());
+        throw std::runtime_error("Could not write video: " + displayPath(output));
       }
-      mediaOutputs_.push_back(output.string());
+      mediaOutputs_.push_back(displayPath(output));
     }
     const double positionMs = capture.get(cv::CAP_PROP_POS_MSEC);
     cv::Mat annotated = processFrame(
-        frame, rawIndex, processedIndex, config_.source,
+        frame, rawIndex, processedIndex, displayPath(config_.source),
         std::isfinite(positionMs) ? std::optional<double>(positionMs)
                                   : std::nullopt);
     if (writer.isOpened()) {
@@ -492,7 +686,8 @@ void RecognitionRuntime::runCapture() {
   capture.release();
   writer.release();
   if (processedIndex == 0 && !state_.stopRequested()) {
-    throw std::runtime_error("Source produced no frames: " + config_.source);
+    throw std::runtime_error("Source produced no frames: " +
+                             displayPath(config_.source));
   }
 }
 
@@ -502,25 +697,41 @@ cv::Mat RecognitionRuntime::processFrame(
   if (!detector_ || !router_ || !scheduler_) {
     throw std::runtime_error("Models are not loaded");
   }
-  const auto frameStarted = Clock::now();
+  const bool competition = config_.profile == "competition";
+  const bool needsAnnotatedFrame = config_.publishPreview || config_.saveVideo;
+  Clock::time_point frameStarted{};
+  if (!competition) {
+    frameStarted = Clock::now();
+  }
   DetectionFrame detectionFrame = detector_->detect(frame, frameIndex);
-  cv::Mat annotated = frame.clone();
+  cv::Mat annotated;
+  if (needsAnnotatedFrame) {
+    annotated = frame.clone();
+  }
   double stage2TotalMs = 0.0;
+  int recognitionCount = 0;
   for (const auto& rawName : detectionFrame.ignoredClasses) {
     logger_.warning("DROP frame=" + std::to_string(frameIndex) +
                     " raw_class=" + rawName + " reason=unsupported_class");
   }
-  std::vector<Stage1Detection> detections;
   std::vector<PrepareJob> prepareJobs;
-  detections.reserve(detectionFrame.regions.size());
   prepareJobs.reserve(detectionFrame.regions.size());
   for (const auto& region : detectionFrame.regions) {
     state_.recordDetection(region.handoff.majorClass);
-    detections.push_back(region.handoff);
-    prepareJobs.emplace_back([this, region]() { return saveCrop(region); });
+    prepareJobs.emplace_back([this, frame, detection = region.handoff]() {
+      PreparedStage2Input prepared;
+      prepared.crop =
+          detection.majorClass == "k"
+              ? squareContextCrop(frame, detection.bbox, 1.15F)
+              : frame(cv::Rect(detection.bbox.x1, detection.bbox.y1,
+                               detection.bbox.width(), detection.bbox.height()))
+                    .clone();
+      prepared.cropPath = saveCrop(detection, prepared.crop);
+      return prepared;
+    });
   }
   const auto resolutions = scheduler_->resolveFrame(
-      detections,
+      detectionFrame.regions,
       [this](const Stage1Detection& detection) {
         return router_->route(detection);
       },
@@ -528,24 +739,36 @@ cv::Mat RecognitionRuntime::processFrame(
   for (std::size_t index = 0; index < detectionFrame.regions.size(); ++index) {
     const auto& region = detectionFrame.regions[index];
     const auto& resolution = resolutions[index];
-    if (resolution.trackId) {
-      trackDebug_[*resolution.trackId] = region.debug;
+    if (!competition) {
+      stage2TotalMs += resolution.inferenceMs;
     }
-    stage2TotalMs += resolution.inferenceMs;
     if (resolution.hasNewResult()) {
-      const json event = buildEvent(region, resolution, frame, processedIndex,
+      const json event = buildEvent(region, resolution, frame.size(), processedIndex,
                                     sourceLabel, sourceTimeMs,
                                     detectionFrame.inferenceMs);
       journal_.write(event);
       state_.recordEvent(event);
+      writeShadowEvent(resolution);
     }
-    drawResult(annotated, region, resolution.decision);
+    if (isAcceptedDecision(resolution.decision)) {
+      if (!annotated.empty()) {
+        drawResult(annotated, region, resolution.decision);
+      }
+      if (!competition) {
+        ++recognitionCount;
+      }
+    }
   }
 
-  lastEventFrame_ = frame;
+  lastEventFrameSize_ = frame.size();
   lastProcessedIndex_ = processedIndex;
   lastSourceLabel_ = sourceLabel;
   lastSourceTimeMs_ = sourceTimeMs;
+
+  if (competition) {
+    state_.recordHeadlessFrame(frameIndex, processedIndex + 1);
+    return annotated;
+  }
 
   std::vector<unsigned char> encoded;
   if (config_.publishPreview) {
@@ -586,8 +809,10 @@ cv::Mat RecognitionRuntime::processFrame(
       {"total", std::round(totalMs * 100.0) / 100.0},
   };
   state_.publishFrame(encoded, frameIndex, processedIndex + 1, fps, timing,
-                      static_cast<int>(detectionFrame.regions.size()));
-  if ((processedIndex + 1) % config_.frameLogEvery == 0) {
+                      static_cast<int>(detectionFrame.regions.size()),
+                      recognitionCount);
+  if (config_.verbose &&
+      (processedIndex + 1) % config_.frameLogEvery == 0) {
     logger_.debug("FRAME frame=" + std::to_string(frameIndex) +
                   " processed=" + std::to_string(processedIndex + 1) +
                   " detections=" +
@@ -620,37 +845,37 @@ void RecognitionRuntime::drainStage2() {
 
 void RecognitionRuntime::writeFinalStage2Event(
     const FinalStage2Result& result) {
-  if (lastEventFrame_.empty() || !lastProcessedIndex_ || !lastSourceLabel_) {
+  if (lastEventFrameSize_.width <= 0 || lastEventFrameSize_.height <= 0 ||
+      !lastProcessedIndex_ || !lastSourceLabel_) {
     return;
   }
-  YoloDebugInfo debug{-1, result.detection.majorClass};
-  if (result.resolution.trackId) {
-    const auto found = trackDebug_.find(*result.resolution.trackId);
-    if (found != trackDebug_.end()) {
-      debug = found->second;
-    }
+  if (!result.resolution.evidence) {
+    throw std::runtime_error(
+        "Final stage-2 result is missing its source evidence");
   }
-  const DetectedRegion region{result.detection, debug};
-  const json event = buildEvent(region, result.resolution, lastEventFrame_,
+  const auto& evidence = *result.resolution.evidence;
+  const DetectedRegion region{evidence.source, evidence.debug, nullptr};
+  const json event = buildEvent(region, result.resolution, lastEventFrameSize_,
                                 *lastProcessedIndex_, *lastSourceLabel_,
                                 lastSourceTimeMs_, 0.0);
   journal_.write(event);
   state_.recordEvent(event);
+  writeShadowEvent(result.resolution);
 }
 
 std::optional<std::string> RecognitionRuntime::saveCrop(
-    const DetectedRegion& region) {
-  if (!config_.saveCrops || region.handoff.majorClass == "b0") {
+    const Stage1Detection& detection, const cv::Mat& crop) {
+  if (!config_.saveCrops || detection.majorClass == "b0") {
     return std::nullopt;
   }
-  std::string filename = region.handoff.detectionId;
+  std::string filename = detection.detectionId;
   std::replace(filename.begin(), filename.end(), ':', '_');
   filename += ".jpg";
-  const fs::path relative = fs::path("crops") / region.handoff.majorClass / filename;
+  const fs::path relative = fs::path("crops") / detection.majorClass / filename;
   const fs::path destination = sessionDirectory_ / relative;
   fs::create_directories(destination.parent_path());
-  if (!cv::imwrite(destination.string(), region.handoff.crop)) {
-    logger_.warning("Could not save crop: " + destination.string());
+  if (!cv::imwrite(destination.string(), crop)) {
+    logger_.warning("Could not save crop: " + displayPath(destination));
     return std::nullopt;
   }
   return relative.generic_string();
@@ -658,11 +883,13 @@ std::optional<std::string> RecognitionRuntime::saveCrop(
 
 json RecognitionRuntime::buildEvent(
     const DetectedRegion& region, const Stage2Resolution& resolution,
-    const cv::Mat& frame, int processedIndex,
+    const cv::Size& frameSize, int processedIndex,
     const std::string& sourceLabel, std::optional<double> sourceTimeMs,
     double yoloMs) const {
   const auto& detection = region.handoff;
   const auto& decision = resolution.decision;
+  json stage2 = decision.toJson();
+  stage2["accepted"] = isAcceptedDecision(decision);
   return {
       {"schema", "recognition_event.v1"},
       {"id", detection.detectionId},
@@ -673,7 +900,7 @@ json RecognitionRuntime::buildEvent(
         {"source", sourceLabel},
         {"source_time_ms",
          sourceTimeMs ? json(*sourceTimeMs) : json(nullptr)},
-        {"image_shape", {frame.rows, frame.cols}}}},
+        {"image_shape", {frameSize.height, frameSize.width}}}},
       {"stage1", detection.handoffJson(resolution.sourceCropPath)},
       {"route",
        {{"module", decision.module},
@@ -688,7 +915,7 @@ json RecognitionRuntime::buildEvent(
                                       : json(nullptr)},
         {"input_contract",
          {"id", "major_class", "confidence", "bbox_xyxy", "crop"}}}},
-      {"stage2", decision.toJson()},
+      {"stage2", std::move(stage2)},
       {"timing_ms",
        {{"yolo_frame", std::round(yoloMs * 1000.0) / 1000.0},
         {"stage2", std::round(resolution.inferenceMs * 1000.0) / 1000.0},
@@ -696,6 +923,63 @@ json RecognitionRuntime::buildEvent(
          std::round((yoloMs + resolution.inferenceMs) * 1000.0) / 1000.0}}},
       {"debug", region.debug.toJson()},
   };
+}
+
+json RecognitionRuntime::buildShadowEvent(
+    const Stage2Resolution& resolution) const {
+  if (!resolution.evidence || !resolution.evidence->shadow) {
+    throw std::runtime_error(
+        "Fresh stage-2 result is missing source-aligned shadow evidence");
+  }
+  const Stage2Evidence& evidence = *resolution.evidence;
+  const Stage2ShadowPayload& shadow = *evidence.shadow;
+  const Stage1Detection& source = evidence.source;
+  if (!shadow.yoloClassScores || shadow.yoloClassScores->empty()) {
+    throw std::runtime_error(
+        "Source detection is missing YOLO scores required by shadow logging");
+  }
+
+  json rawStage2 = shadow.rawDecision.toJson();
+  rawStage2["class_scores"] = shadow.rawDecision.classScores;
+  json decision = resolution.decision.toJson();
+  decision["class_scores"] = resolution.decision.classScores;
+  return {
+      {"schema", "recognition_shadow.v1"},
+      {"timestamp", localTimeIso(true)},
+      {"input", shadowInput_},
+      {"source",
+       {{"id", source.detectionId},
+        {"frame_index", source.frameIndex},
+        {"major_class", source.majorClass},
+        {"confidence", source.confidence},
+        {"bbox_xyxy", source.bbox.toJson()},
+        {"raw_yolo_class_id", evidence.debug.rawClassId},
+        {"raw_yolo_class", evidence.debug.rawClassName},
+        {"class_scores", *shadow.yoloClassScores}}},
+      {"stage2_raw", std::move(rawStage2)},
+      {"decision", std::move(decision)},
+      {"route",
+       {{"track_id",
+         resolution.trackId ? json(*resolution.trackId) : json(nullptr)},
+        {"execution", resolution.mode}}},
+      {"timing_ms", {{"stage2", resolution.inferenceMs}}},
+  };
+}
+
+void RecognitionRuntime::writeShadowEvent(
+    const Stage2Resolution& resolution) {
+  if (!config_.shadowLog || !resolution.evidence ||
+      resolution.evidence->source.majorClass == "b0") {
+    return;
+  }
+  shadowStream_ << buildShadowEvent(resolution).dump() << '\n';
+  ++shadowRecordCount_;
+  if (shadowRecordCount_ % 128 == 0) {
+    shadowStream_.flush();
+  }
+  if (!shadowStream_) {
+    throw std::runtime_error("Could not write source-aligned shadow evidence");
+  }
 }
 
 void RecognitionRuntime::drawResult(cv::Mat& image,
@@ -744,16 +1028,24 @@ void RecognitionRuntime::writeManifest() const {
       {"schema", "recognition_session.v1"},
       {"session_id", sessionDirectory_.filename().string()},
       {"created_at", state_.snapshot()["started_at"]},
-      {"source", config_.source},
-      {"session_dir", sessionDirectory_.string()},
+      {"source", displayPath(config_.source)},
+      {"session_dir", displayPath(sessionDirectory_)},
       {"config", config_.toJson()},
-      {"models", modelMetadata_},
+      {"models", displayPathsInJson(modelMetadata_)},
       {"data_flow",
        {{{"from", "source"}, {"to", "yolo"}, {"payload", "BGR frame"}},
         {{"from", "yolo"},
-         {"to", "router"},
-         {"payload", {"id", "major_class", "confidence", "bbox_xyxy", "crop"}},
+         {"to", "stage2 scheduler"},
+         {"payload", {"id", "major_class", "confidence", "bbox_xyxy"}},
          {"excluded", {"raw_yolo_class", "raw_yolo_class_id"}}},
+        {{"condition", "major_class == f or k and stage2 refresh is due"},
+         {"from", "stage2 scheduler"},
+         {"to", "router"},
+         {"payload", {"id", "major_class", "confidence", "bbox_xyxy", "crop"}}},
+        {{"condition", "major_class == b0"},
+         {"from", "stage2 scheduler"},
+         {"to", "router"},
+         {"payload", {"id", "major_class", "confidence", "bbox_xyxy"}}},
         {{"condition", "major_class == f"},
          {"from", "router"},
          {"to", "InsightFace face recognition"}},
@@ -764,10 +1056,19 @@ void RecognitionRuntime::writeManifest() const {
          {"from", "router"},
          {"to", "passthrough"}}}},
       {"outputs",
-       {{"events", (sessionDirectory_ / "events.jsonl").string()},
-        {"summary", (sessionDirectory_ / "summary.json").string()},
-        {"annotated_video", (sessionDirectory_ / "annotated.mp4").string()},
-        {"crops", (sessionDirectory_ / "crops").string()}}},
+       {{"events", displayPath(sessionDirectory_ / "events.jsonl")},
+        {"shadow",
+         config_.shadowLog
+             ? json(displayPath(sessionDirectory_ / "shadow.jsonl"))
+             : json(nullptr)},
+        {"summary", displayPath(sessionDirectory_ / "summary.json")},
+        {"annotated_video",
+         config_.saveVideo
+             ? json(displayPath(sessionDirectory_ / "annotated.mp4"))
+             : json(nullptr)},
+        {"crops",
+         config_.saveCrops ? json(displayPath(sessionDirectory_ / "crops"))
+                           : json(nullptr)}}},
       {"implementation", "C++17"},
   };
   writeJson(sessionDirectory_ / "manifest.json", payload);
@@ -787,13 +1088,18 @@ void RecognitionRuntime::writeSummary() const {
       {"major_counts", snapshot["major_counts"]},
       {"status_counts", snapshot["status_counts"]},
       {"media_outputs", mediaOutputs_},
-      {"events_jsonl", (sessionDirectory_ / "events.jsonl").string()},
+      {"events_jsonl", displayPath(sessionDirectory_ / "events.jsonl")},
+      {"shadow_jsonl",
+       config_.shadowLog
+           ? json(displayPath(sessionDirectory_ / "shadow.jsonl"))
+           : json(nullptr)},
+      {"shadow_records", shadowRecordCount_},
       {"implementation", "C++17"},
   };
   writeJson(sessionDirectory_ / "summary.json", payload);
   logger_.info("END status=" + snapshot["status"].get<std::string>() +
                " frames=" + std::to_string(snapshot["processed_frames"].get<int>()) +
-               " output=" + sessionDirectory_.string());
+               " output=" + displayPath(sessionDirectory_));
 }
 
 }  // namespace insight_cup

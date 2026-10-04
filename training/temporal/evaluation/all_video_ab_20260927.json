@@ -1,6 +1,6 @@
 {
   "schema": "temporal_smoothing_evaluation.v1",
-  "source": "/home/j/knife_recording/all_d455_color_20260917_231331_342206.mp4",
+  "source": "../knife_recording/all_d455_color_20260917_231331_342206.mp4",
   "processed_frames_per_run": 2569,
   "knife_mode": "classification",
   "configuration": {

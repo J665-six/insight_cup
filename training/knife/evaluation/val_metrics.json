@@ -3,7 +3,7 @@
   "model": {
     "backend": "paddleclas_onnx",
     "upstream_commit": "f1233c18455b8acde4fc42ab0bea575fa06daa8e",
-    "model_dir": "/home/j/insight_cup/models/knife/pplcnetv2_base_knife10",
+    "model_dir": "models/knife/pplcnetv2_base_knife10",
     "architecture": "PPLCNetV2_base",
     "labels": [
       "k1",
@@ -26,8 +26,8 @@
     ]
   },
   "dataset": {
-    "root": "/home/j/insight_cup/data/knife_dataset/trainv5_grouped",
-    "list": "/home/j/insight_cup/data/knife_dataset/trainv5_grouped/val_list.txt",
+    "root": "data/knife_dataset/trainv5_grouped",
+    "list": "data/knife_dataset/trainv5_grouped/val_list.txt",
     "split": "val",
     "samples": 509
   },

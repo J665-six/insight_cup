@@ -79,7 +79,7 @@ ONNX YOLO；它能明显降低内存，但本机 CPU 和耗时更高。
 
 ```bash
 ./start.sh \
-  --weights /home/j/trainv5/runs/yolo11n_trainv5_continue_latest-2/weights/best.onnx \
+  --weights ../trainv5/runs/yolo11n_trainv5_continue_latest-2/weights/best.onnx \
   --yolo-cpu-threads 2
 ```
 

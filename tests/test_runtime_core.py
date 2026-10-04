@@ -12,6 +12,7 @@ import unittest
 import urllib.request
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import numpy as np
 
@@ -32,6 +33,7 @@ from insight_cup.app.detector import (
 )
 from insight_cup.app.logging_utils import EventJournal
 from insight_cup.app.router import RecognitionRouter
+from insight_cup.app.runtime import _opencv_thread_count
 from insight_cup.app.state import RuntimeState
 from insight_cup.app.sources import is_realsense_source, is_video_source
 from insight_cup.app.stage2 import (
@@ -116,7 +118,7 @@ class StubKnifeService:
 
 
 class RuntimeContractTests(unittest.TestCase):
-    def test_start_script_defaults_to_no_ui_and_allows_explicit_ui(self) -> None:
+    def test_start_script_defaults_to_competition_profile(self) -> None:
         environment = {**os.environ, "INSIGHT_CUP_BIN": "/bin/echo"}
         default = subprocess.run(
             [str(PROJECT_ROOT / "start.sh"), "--source", "sample.mp4"],
@@ -134,9 +136,74 @@ class RuntimeContractTests(unittest.TestCase):
         ).stdout.strip()
         self.assertEqual(
             default,
-            "--source sample.mp4 --no-ui",
+            "--source sample.mp4 --profile competition",
         )
-        self.assertEqual(explicit_ui, "--ui --source sample.mp4")
+        self.assertEqual(
+            explicit_ui,
+            "--ui --source sample.mp4 --no-save-video --no-save-crops "
+            "--profile custom",
+        )
+
+    def test_start_script_selects_ui_recording_profile(self) -> None:
+        environment = {**os.environ, "INSIGHT_CUP_BIN": "/bin/echo"}
+        result = subprocess.run(
+            [
+                str(PROJECT_ROOT / "start.sh"),
+                "--profile",
+                "ui-recording",
+                "--source",
+                "sample.mp4",
+                "--no-open-browser",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=environment,
+        ).stdout.strip()
+        self.assertEqual(
+            result,
+            "--source sample.mp4 --no-open-browser --profile ui-recording",
+        )
+
+    def test_competition_profile_rejects_debug_outputs(self) -> None:
+        environment = {**os.environ, "INSIGHT_CUP_BIN": "/bin/echo"}
+        for forbidden in ("--ui", "--save-video", "--save-crops", "--shadow-log", "--verbose"):
+            with self.subTest(forbidden=forbidden):
+                result = subprocess.run(
+                    [
+                        str(PROJECT_ROOT / "start.sh"),
+                        "--profile",
+                        "competition",
+                        forbidden,
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    env=environment,
+                )
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("competition forbids", result.stderr)
+
+    def test_start_script_preserves_explicit_media_options_in_order(self) -> None:
+        environment = {**os.environ, "INSIGHT_CUP_BIN": "/bin/echo"}
+        result = subprocess.run(
+            [
+                str(PROJECT_ROOT / "start.sh"),
+                "--save-video",
+                "--no-save-video",
+                "--no-save-crops",
+                "--save-crops",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=environment,
+        ).stdout.strip()
+        self.assertEqual(
+            result,
+            "--save-video --no-save-video --no-save-crops --save-crops --no-ui "
+            "--profile custom",
+        )
 
     def test_debug_ui_opens_browser_by_default(self) -> None:
         parser = build_parser()
@@ -149,7 +216,7 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertEqual(defaults.preview_width, 960)
         self.assertEqual(defaults.jpeg_quality, 82)
         self.assertEqual(defaults.frame_log_every, 30)
-        self.assertEqual(defaults.stage2_workers, 2)
+        self.assertEqual(defaults.stage2_workers, 1)
         self.assertEqual(defaults.stage2_refresh_frames, 15)
         self.assertEqual(defaults.stage2_stable_refresh_frames, 30)
         self.assertEqual(defaults.knife_cpu_threads, 1)
@@ -175,6 +242,14 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertFalse(
             _build_config(parser.parse_args(["--no-ui"])).publish_preview
         )
+
+    def test_opencv_thread_limit_uses_safe_environment_default(self) -> None:
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(_opencv_thread_count(), 1)
+        with patch.dict(os.environ, {"INSIGHT_CUP_OPENCV_THREADS": "3"}):
+            self.assertEqual(_opencv_thread_count(), 3)
+        with patch.dict(os.environ, {"INSIGHT_CUP_OPENCV_THREADS": "invalid"}):
+            self.assertEqual(_opencv_thread_count(), 1)
 
     def test_realsense_source_aliases_are_explicit(self) -> None:
         self.assertTrue(is_realsense_source("realsense"))

@@ -12,6 +12,7 @@ namespace fs = std::filesystem;
 using json = nlohmann::json;
 
 struct RuntimeConfig {
+  std::string profile = "custom";
   std::string source = "realsense";
   fs::path weights = fs::path(INSIGHT_CUP_PROJECT_ROOT) / "models/yolo/best.onnx";
   fs::path outputRoot = fs::path(INSIGHT_CUP_PROJECT_ROOT) / "outputs/runtime";
@@ -21,6 +22,8 @@ struct RuntimeConfig {
   std::string yoloDevice = "auto";
   int yoloCpuThreads = 1;
   std::string provider = "auto";
+  fs::path rknnModelDir = fs::path(INSIGHT_CUP_PROJECT_ROOT) /
+                          "models/rknn/rk3588_fp16";
 
   fs::path faceGallery = fs::path(INSIGHT_CUP_PROJECT_ROOT) /
                          "data/face_gallery/cpp/trainv5_gallery_r50.icg";
@@ -43,6 +46,7 @@ struct RuntimeConfig {
                           "data/knife_gallery/cpp/trainv5_ppshitu_v2.icg";
   float knifeThreshold = 0.50F;
   float knifeMinMargin = 0.15F;
+  float knifeMinBoxAreaRatio = 0.0F;
   float knifeRetrievalThreshold = 0.50F;
   float knifeRetrievalMinMargin = 0.02F;
   int knifeCpuThreads = 1;
@@ -50,7 +54,9 @@ struct RuntimeConfig {
   int stage2RefreshFrames = 15;
   int stage2StableRefreshFrames = 30;
   float stage2CacheIou = 0.55F;
-  int stage2Workers = 2;
+  // One worker per recognition class keeps CPU contention bounded while the
+  // desktop is being used over NoMachine. Increase explicitly when headless.
+  int stage2Workers = 1;
   std::string stage2Smoothing = "vote";
   int stage2SmoothingWindow = 3;
   int stage2SwitchConfirmations = 2;
@@ -66,10 +72,12 @@ struct RuntimeConfig {
   std::string host = "127.0.0.1";
   int port = 7860;
   bool noUi = false;
+  bool startPaused = false;
   bool exitOnComplete = false;
   bool openBrowser = true;
   bool saveVideo = true;
   bool saveCrops = true;
+  bool shadowLog = false;
   bool showRawLabel = false;
   bool publishPreview = true;
   int jpegQuality = 82;
@@ -89,6 +97,7 @@ struct ParsedCommandLine {
 
 ParsedCommandLine parseCommandLine(int argc, char** argv);
 std::string commandLineHelp();
+std::string displayPath(const fs::path& path);
 bool isRealSenseSource(const std::string& value);
 bool isVideoSource(const std::string& value);
 
