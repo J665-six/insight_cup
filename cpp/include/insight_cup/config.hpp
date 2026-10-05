@@ -21,6 +21,8 @@ struct RuntimeConfig {
   int imageSize = 640;
   std::string yoloDevice = "auto";
   int yoloCpuThreads = 1;
+  int yoloFrameStride = 1;
+  int yoloDenseForceThreshold = 0;
   std::string provider = "auto";
   fs::path rknnModelDir = fs::path(INSIGHT_CUP_PROJECT_ROOT) /
                           "models/rknn/rk3588_fp16";

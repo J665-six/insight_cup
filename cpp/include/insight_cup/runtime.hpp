@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <deque>
 #include <filesystem>
 #include <fstream>
@@ -34,11 +35,24 @@ class RecognitionRuntime {
   void run();
 
  private:
+  struct Stage1Track;
+
   void loadModels();
   void runSource();
   void runRealSense();
   void runImages(const fs::path& source);
   void runCapture();
+  DetectionFrame stage1Frame(const cv::Mat& frame, int frameIndex,
+                             int processedIndex);
+  std::optional<float> stage1AssociationScore(const Stage1Track& track,
+                                              const DetectedRegion& region,
+                                              const cv::Size& frameSize) const;
+  DetectionFrame trackYoloDetections(DetectionFrame detectionFrame,
+                                     const cv::Size& frameSize,
+                                     int frameIndex);
+  DetectionFrame predictTrackedDetections(const cv::Size& frameSize,
+                                          int frameIndex) const;
+  void requestYoloOnUnstableResult(const Stage2Resolution& resolution);
   cv::Mat processFrame(const cv::Mat& frame, int frameIndex,
                        int processedIndex, const std::string& sourceLabel,
                        std::optional<double> sourceTimeMs);
@@ -78,6 +92,20 @@ class RecognitionRuntime {
   std::ofstream shadowStream_;
   json shadowInput_ = json::object();
   std::size_t shadowRecordCount_ = 0;
+
+  struct Stage1Track {
+    int trackId = 0;
+    DetectedRegion region;
+    int lastYoloFrame = 0;
+    std::array<float, 4> velocity = {0.0F, 0.0F, 0.0F, 0.0F};
+    int hits = 1;
+    int missedYoloFrames = 0;
+  };
+  std::vector<Stage1Track> stage1Tracks_;
+  int nextStage1TrackId_ = 1;
+  std::optional<int> lastFullYoloProcessedIndex_;
+  int lastFullYoloTargetCount_ = 0;
+  bool forceNextYoloFrame_ = true;
 };
 
 }  // namespace insight_cup

@@ -514,6 +514,145 @@ class AsyncStage2SchedulerTests(unittest.TestCase):
         finally:
             scheduler.close()
 
+    def test_confirming_result_gets_early_recheck(self) -> None:
+        scheduler = AsyncStage2Scheduler(
+            refresh_frames=10,
+            stable_refresh_frames=30,
+            iou_threshold=0.5,
+            smoothing_method="vote",
+            switch_confirmations=2,
+        )
+        calls: list[str] = []
+        release_first = threading.Event()
+        release_second = threading.Event()
+
+        def recognize(item: Stage1Detection) -> Stage2Decision:
+            calls.append(item.detection_id)
+            if len(calls) == 1:
+                release_first.wait(timeout=1.0)
+            elif len(calls) == 2:
+                release_second.wait(timeout=1.0)
+            return Stage2Decision(
+                module="face",
+                status="matched",
+                predicted_class="f2",
+                candidate_class="f2",
+                score=0.90,
+                second_best_class="f4",
+                second_best_score=0.20,
+                margin=0.70,
+            )
+
+        try:
+            first = scheduler.resolve(detection("f", 1), recognize)
+            self.assertEqual(first.mode, "processing")
+            release_first.set()
+            self.assertTrue(scheduler.wait_for_idle(1.0))
+
+            first_result = scheduler.resolve(detection("f", 2), recognize)
+            self.assertEqual(first_result.mode, "fresh")
+            self.assertEqual(first_result.decision.status, "confirming")
+            self.assertEqual(len(calls), 1)
+
+            early_refresh = scheduler.resolve(detection("f", 3), recognize)
+            self.assertEqual(early_refresh.mode, "cached")
+            release_second.set()
+            self.assertTrue(scheduler.wait_for_idle(1.0))
+
+            confirmed = scheduler.resolve(detection("f", 4), recognize)
+            self.assertEqual(confirmed.mode, "fresh")
+            self.assertEqual(confirmed.decision.status, "matched")
+            self.assertEqual(len(calls), 2)
+        finally:
+            scheduler.close()
+
+    def test_uncertain_result_refreshes_before_base_interval(self) -> None:
+        scheduler = AsyncStage2Scheduler(refresh_frames=12, iou_threshold=0.5)
+        calls: list[str] = []
+        release_first = threading.Event()
+        release_second = threading.Event()
+
+        def recognize(item: Stage1Detection) -> Stage2Decision:
+            calls.append(item.detection_id)
+            if len(calls) == 1:
+                release_first.wait(timeout=1.0)
+            elif len(calls) == 2:
+                release_second.wait(timeout=1.0)
+            return Stage2Decision(module="face", status="no_face")
+
+        try:
+            first = scheduler.resolve(detection("f", 1), recognize)
+            self.assertEqual(first.mode, "processing")
+            release_first.set()
+            self.assertTrue(scheduler.wait_for_idle(1.0))
+
+            first_result = scheduler.resolve(detection("f", 2), recognize)
+            self.assertEqual(first_result.mode, "fresh")
+            self.assertEqual(len(calls), 1)
+
+            early_refresh = scheduler.resolve(detection("f", 3), recognize)
+            self.assertEqual(early_refresh.mode, "cached")
+            release_second.set()
+            self.assertTrue(scheduler.wait_for_idle(1.0))
+
+            refreshed = scheduler.resolve(detection("f", 4), recognize)
+            self.assertEqual(refreshed.mode, "fresh")
+            self.assertEqual(len(calls), 2)
+        finally:
+            scheduler.close()
+
+    def test_weak_match_refreshes_before_stable_interval(self) -> None:
+        scheduler = AsyncStage2Scheduler(
+            refresh_frames=15,
+            stable_refresh_frames=30,
+            iou_threshold=0.5,
+        )
+        calls: list[str] = []
+        release_first = threading.Event()
+        release_second = threading.Event()
+
+        def recognize(item: Stage1Detection) -> Stage2Decision:
+            calls.append(item.detection_id)
+            if len(calls) == 1:
+                release_first.wait(timeout=1.0)
+            elif len(calls) == 2:
+                release_second.wait(timeout=1.0)
+            return Stage2Decision(
+                module="knife",
+                status="matched",
+                predicted_class="k4",
+                candidate_class="k4",
+                score=0.53,
+                second_best_class="k5",
+                second_best_score=0.40,
+                margin=0.13,
+            )
+
+        try:
+            first = scheduler.resolve(detection("k", 1), recognize)
+            self.assertEqual(first.mode, "processing")
+            release_first.set()
+            self.assertTrue(scheduler.wait_for_idle(1.0))
+
+            first_result = scheduler.resolve(detection("k", 2), recognize)
+            self.assertEqual(first_result.mode, "fresh")
+            self.assertEqual(len(calls), 1)
+
+            before_weak_refresh = scheduler.resolve(detection("k", 7), recognize)
+            self.assertEqual(before_weak_refresh.mode, "cached")
+            self.assertEqual(len(calls), 1)
+
+            weak_refresh = scheduler.resolve(detection("k", 8), recognize)
+            self.assertEqual(weak_refresh.mode, "cached")
+            release_second.set()
+            self.assertTrue(scheduler.wait_for_idle(1.0))
+
+            refreshed = scheduler.resolve(detection("k", 9), recognize)
+            self.assertEqual(refreshed.mode, "fresh")
+            self.assertEqual(len(calls), 2)
+        finally:
+            scheduler.close()
+
     def test_onnx_cpu_policy_bounds_threads_and_disables_spinning(self) -> None:
         import onnxruntime as ort
 
@@ -684,9 +823,13 @@ class TemporalDecisionSmootherTests(unittest.TestCase):
         self.assertEqual(spike.predicted_class, "k1")
         self.assertEqual(recovered.predicted_class, "k1")
         self.assertEqual(pending.predicted_class, "k1")
-        self.assertEqual(pending_again.predicted_class, "k2")
+        self.assertEqual(pending_again.predicted_class, "k1")
         self.assertEqual(switched.predicted_class, "k2")
         self.assertEqual(switched.metadata["temporal"]["method"], "mean")
+        self.assertEqual(
+            switched.metadata["temporal"]["stable_switch_confirmations"],
+            3,
+        )
 
     def test_vote_switches_after_a_repeated_majority(self) -> None:
         smoother = TemporalDecisionSmoother("vote", 3, 2, 0.0, 0.0)

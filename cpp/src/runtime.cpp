@@ -151,6 +151,51 @@ bool isAcceptedDecision(const Stage2Decision& decision) {
          (decision.status == "matched" || decision.status == "passthrough");
 }
 
+std::array<float, 4> boxValues(const Box& box) {
+  return {static_cast<float>(box.x1), static_cast<float>(box.y1),
+          static_cast<float>(box.x2), static_cast<float>(box.y2)};
+}
+
+Box clampBoxToFrame(const Box& box, const cv::Size& frameSize) {
+  return {
+      std::clamp(box.x1, 0, std::max(frameSize.width - 1, 0)),
+      std::clamp(box.y1, 0, std::max(frameSize.height - 1, 0)),
+      std::clamp(box.x2, 0, frameSize.width),
+      std::clamp(box.y2, 0, frameSize.height),
+  };
+}
+
+Box predictedBox(const Box& box, const std::array<float, 4>& velocity,
+                 int frameGap, const cv::Size& frameSize) {
+  const auto values = boxValues(box);
+  Box predicted{
+      static_cast<int>(std::nearbyint(values[0] + velocity[0] * frameGap)),
+      static_cast<int>(std::nearbyint(values[1] + velocity[1] * frameGap)),
+      static_cast<int>(std::nearbyint(values[2] + velocity[2] * frameGap)),
+      static_cast<int>(std::nearbyint(values[3] + velocity[3] * frameGap)),
+  };
+  predicted = clampBoxToFrame(predicted, frameSize);
+  return predicted.valid() ? predicted : box;
+}
+
+float newTrackMinConfidence(const std::string& majorClass) {
+  if (majorClass == "f") {
+    return 0.45F;
+  }
+  if (majorClass == "k") {
+    return 0.35F;
+  }
+  return 0.0F;
+}
+
+int trackableTargetCount(const DetectionFrame& detectionFrame) {
+  return static_cast<int>(
+      std::count_if(detectionFrame.regions.begin(), detectionFrame.regions.end(),
+                    [](const DetectedRegion& region) {
+                      return region.handoff.majorClass != "b0";
+                    }));
+}
+
 std::string sha256File(const fs::path& path) {
   std::ifstream stream(path, std::ios::binary);
   if (!stream) {
@@ -691,6 +736,227 @@ void RecognitionRuntime::runCapture() {
   }
 }
 
+std::optional<float> RecognitionRuntime::stage1AssociationScore(
+    const Stage1Track& track, const DetectedRegion& region,
+    const cv::Size& frameSize) const {
+  if (track.region.handoff.majorClass != region.handoff.majorClass) {
+    return std::nullopt;
+  }
+  const int frameGap =
+      std::max(1, region.handoff.frameIndex - track.lastYoloFrame);
+  const Box predicted =
+      predictedBox(track.region.handoff.bbox, track.velocity, frameGap,
+                   frameSize);
+  const Box& current = region.handoff.bbox;
+  const float overlap = bboxIou(predicted, current);
+  const float previousOverlap = bboxIou(track.region.handoff.bbox, current);
+  const float currentWidth = std::max(1, current.width());
+  const float currentHeight = std::max(1, current.height());
+  const float predictedWidth = std::max(1, predicted.width());
+  const float predictedHeight = std::max(1, predicted.height());
+  const float widthRatio =
+      std::min(currentWidth, predictedWidth) /
+      std::max(currentWidth, predictedWidth);
+  const float heightRatio = std::min(currentHeight, predictedHeight) /
+                            std::max(currentHeight, predictedHeight);
+  if (widthRatio < 0.5F || heightRatio < 0.5F) {
+    return std::nullopt;
+  }
+  const float currentX = (current.x1 + current.x2) * 0.5F;
+  const float currentY = (current.y1 + current.y2) * 0.5F;
+  const float predictedX = (predicted.x1 + predicted.x2) * 0.5F;
+  const float predictedY = (predicted.y1 + predicted.y2) * 0.5F;
+  const float centerDistance =
+      std::hypot(currentX - predictedX, currentY - predictedY);
+  const float diagonal = std::max(std::hypot(currentWidth, currentHeight),
+                                  std::hypot(predictedWidth, predictedHeight));
+  const float distanceLimit =
+      std::max(24.0F, diagonal * 0.50F) *
+      std::min(2.0F, std::sqrt(static_cast<float>(frameGap)));
+  if (std::max(overlap, previousOverlap) < 0.30F &&
+      centerDistance > distanceLimit) {
+    return std::nullopt;
+  }
+  const float normalizedDistance = centerDistance / std::max(diagonal, 1.0F);
+  return overlap * 3.0F + previousOverlap +
+         std::max(0.0F, 1.0F - normalizedDistance) +
+         0.25F * (widthRatio + heightRatio);
+}
+
+DetectionFrame RecognitionRuntime::trackYoloDetections(
+    DetectionFrame detectionFrame, const cv::Size& frameSize, int frameIndex) {
+  if (config_.yoloFrameStride <= 1) {
+    return detectionFrame;
+  }
+
+  struct Pair {
+    float score = 0.0F;
+    std::size_t regionIndex = 0;
+    std::size_t trackIndex = 0;
+  };
+  std::vector<Pair> pairs;
+  for (std::size_t regionIndex = 0; regionIndex < detectionFrame.regions.size();
+       ++regionIndex) {
+    const auto& region = detectionFrame.regions[regionIndex];
+    if (region.handoff.majorClass == "b0") {
+      continue;
+    }
+    for (std::size_t trackIndex = 0; trackIndex < stage1Tracks_.size();
+         ++trackIndex) {
+      const auto score =
+          stage1AssociationScore(stage1Tracks_[trackIndex], region, frameSize);
+      if (score) {
+        pairs.push_back({*score, regionIndex, trackIndex});
+      }
+    }
+  }
+  std::sort(pairs.begin(), pairs.end(), [](const Pair& left, const Pair& right) {
+    return left.score > right.score;
+  });
+
+  std::set<std::size_t> matchedRegions;
+  std::set<std::size_t> matchedTracks;
+  DetectionFrame filtered;
+  filtered.inferenceMs = detectionFrame.inferenceMs;
+  filtered.ignoredClasses = std::move(detectionFrame.ignoredClasses);
+  for (const auto& pair : pairs) {
+    if (matchedRegions.count(pair.regionIndex) != 0 ||
+        matchedTracks.count(pair.trackIndex) != 0) {
+      continue;
+    }
+    matchedRegions.insert(pair.regionIndex);
+    matchedTracks.insert(pair.trackIndex);
+    auto& track = stage1Tracks_[pair.trackIndex];
+    DetectedRegion region = detectionFrame.regions[pair.regionIndex];
+    const int frameGap = std::max(1, frameIndex - track.lastYoloFrame);
+    const auto current = boxValues(region.handoff.bbox);
+    const auto previous = boxValues(track.region.handoff.bbox);
+    for (std::size_t index = 0; index < current.size(); ++index) {
+      const float observed = (current[index] - previous[index]) / frameGap;
+      track.velocity[index] =
+          track.hits <= 1 ? observed : 0.70F * observed + 0.30F * track.velocity[index];
+    }
+    track.region = region;
+    track.lastYoloFrame = frameIndex;
+    track.missedYoloFrames = 0;
+    ++track.hits;
+    filtered.regions.push_back(std::move(region));
+  }
+
+  for (std::size_t regionIndex = 0; regionIndex < detectionFrame.regions.size();
+       ++regionIndex) {
+    if (matchedRegions.count(regionIndex) != 0) {
+      continue;
+    }
+    auto region = detectionFrame.regions[regionIndex];
+    if (region.handoff.majorClass == "b0") {
+      filtered.regions.push_back(std::move(region));
+      continue;
+    }
+    if (region.handoff.confidence <
+        newTrackMinConfidence(region.handoff.majorClass)) {
+      continue;
+    }
+    Stage1Track track;
+    track.trackId = nextStage1TrackId_++;
+    track.region = region;
+    track.lastYoloFrame = frameIndex;
+    stage1Tracks_.push_back(std::move(track));
+    filtered.regions.push_back(std::move(region));
+  }
+
+  std::vector<Stage1Track> retained;
+  retained.reserve(stage1Tracks_.size());
+  for (std::size_t trackIndex = 0; trackIndex < stage1Tracks_.size();
+       ++trackIndex) {
+    auto track = std::move(stage1Tracks_[trackIndex]);
+    if (matchedTracks.count(trackIndex) == 0 && track.lastYoloFrame != frameIndex) {
+      ++track.missedYoloFrames;
+    }
+    if (track.missedYoloFrames <= 1) {
+      retained.push_back(std::move(track));
+    }
+  }
+  stage1Tracks_ = std::move(retained);
+  return filtered;
+}
+
+DetectionFrame RecognitionRuntime::predictTrackedDetections(
+    const cv::Size& frameSize, int frameIndex) const {
+  DetectionFrame detectionFrame;
+  int detectionIndex = 0;
+  for (const auto& track : stage1Tracks_) {
+    const int frameGap = frameIndex - track.lastYoloFrame;
+    if (frameGap <= 0 || frameGap > std::max(1, config_.yoloFrameStride)) {
+      continue;
+    }
+    DetectedRegion region = track.region;
+    region.handoff.frameIndex = frameIndex;
+    region.handoff.bbox =
+        predictedBox(track.region.handoff.bbox, track.velocity, frameGap,
+                     frameSize);
+    if (!region.handoff.bbox.valid()) {
+      continue;
+    }
+    region.handoff.confidence =
+        std::max(0.01F, region.handoff.confidence * 0.98F);
+    std::ostringstream id;
+    id << "frame" << std::setfill('0') << std::setw(6) << frameIndex << ":trk"
+       << std::setw(3) << detectionIndex++;
+    region.handoff.detectionId = id.str();
+    region.handoff.crop.release();
+    region.shadowClassScores.reset();
+    detectionFrame.regions.push_back(std::move(region));
+  }
+  return detectionFrame;
+}
+
+DetectionFrame RecognitionRuntime::stage1Frame(const cv::Mat& frame,
+                                               int frameIndex,
+                                               int processedIndex) {
+  if (config_.yoloFrameStride <= 1) {
+    return detector_->detect(frame, frameIndex);
+  }
+  const bool hasLiveTracks = std::any_of(
+      stage1Tracks_.begin(), stage1Tracks_.end(), [&](const Stage1Track& track) {
+        return frameIndex - track.lastYoloFrame <= config_.yoloFrameStride;
+      });
+  const bool strideDue =
+      !lastFullYoloProcessedIndex_ ||
+      processedIndex - *lastFullYoloProcessedIndex_ >= config_.yoloFrameStride;
+  const bool denseScene =
+      config_.yoloDenseForceThreshold > 0 &&
+      lastFullYoloTargetCount_ >= config_.yoloDenseForceThreshold;
+  const bool runYolo =
+      forceNextYoloFrame_ || !hasLiveTracks || strideDue || denseScene;
+  if (runYolo) {
+    DetectionFrame detectionFrame = detector_->detect(frame, frameIndex);
+    lastFullYoloProcessedIndex_ = processedIndex;
+    forceNextYoloFrame_ = false;
+    DetectionFrame tracked =
+        trackYoloDetections(std::move(detectionFrame), frame.size(), frameIndex);
+    lastFullYoloTargetCount_ = trackableTargetCount(tracked);
+    return tracked;
+  }
+  DetectionFrame predicted = predictTrackedDetections(frame.size(), frameIndex);
+  if (predicted.regions.empty()) {
+    forceNextYoloFrame_ = true;
+  }
+  return predicted;
+}
+
+void RecognitionRuntime::requestYoloOnUnstableResult(
+    const Stage2Resolution& resolution) {
+  if (config_.yoloFrameStride <= 1 || resolution.decision.module == "passthrough") {
+    return;
+  }
+  const bool stable = resolution.decision.status == "matched" &&
+                      resolution.decision.predictedClass.has_value();
+  if (resolution.hasNewResult() && !stable) {
+    forceNextYoloFrame_ = true;
+  }
+}
+
 cv::Mat RecognitionRuntime::processFrame(
     const cv::Mat& frame, int frameIndex, int processedIndex,
     const std::string& sourceLabel, std::optional<double> sourceTimeMs) {
@@ -703,7 +969,7 @@ cv::Mat RecognitionRuntime::processFrame(
   if (!competition) {
     frameStarted = Clock::now();
   }
-  DetectionFrame detectionFrame = detector_->detect(frame, frameIndex);
+  DetectionFrame detectionFrame = stage1Frame(frame, frameIndex, processedIndex);
   cv::Mat annotated;
   if (needsAnnotatedFrame) {
     annotated = frame.clone();
@@ -723,9 +989,7 @@ cv::Mat RecognitionRuntime::processFrame(
       prepared.crop =
           detection.majorClass == "k"
               ? squareContextCrop(frame, detection.bbox, 1.15F)
-              : frame(cv::Rect(detection.bbox.x1, detection.bbox.y1,
-                               detection.bbox.width(), detection.bbox.height()))
-                    .clone();
+              : squareContextCrop(frame, detection.bbox, 1.30F);
       prepared.cropPath = saveCrop(detection, prepared.crop);
       return prepared;
     });
@@ -739,6 +1003,7 @@ cv::Mat RecognitionRuntime::processFrame(
   for (std::size_t index = 0; index < detectionFrame.regions.size(); ++index) {
     const auto& region = detectionFrame.regions[index];
     const auto& resolution = resolutions[index];
+    requestYoloOnUnstableResult(resolution);
     if (!competition) {
       stage2TotalMs += resolution.inferenceMs;
     }
@@ -969,6 +1234,7 @@ json RecognitionRuntime::buildShadowEvent(
 void RecognitionRuntime::writeShadowEvent(
     const Stage2Resolution& resolution) {
   if (!config_.shadowLog || !resolution.evidence ||
+      !resolution.evidence->shadow ||
       resolution.evidence->source.majorClass == "b0") {
     return;
   }

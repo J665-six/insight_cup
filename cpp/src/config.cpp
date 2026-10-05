@@ -186,7 +186,8 @@ void RuntimeConfig::validate() const {
   requireRange("Knife retrieval margin", knifeRetrievalMinMargin, 0.0F, 1.0F);
   requireRange("Stage-2 cache IoU", stage2CacheIou, 0.0F, 1.0F, true);
   if (imageSize <= 0 || faceDetectionSize <= 0 || faceUpsampleMinSide < 0 ||
-      yoloCpuThreads <= 0 || faceCpuThreads <= 0 ||
+      yoloCpuThreads <= 0 || yoloFrameStride <= 0 ||
+      yoloDenseForceThreshold < 0 || faceCpuThreads <= 0 ||
       knifeCpuThreads <= 0 || stage2RefreshFrames <= 0 ||
       stage2StableRefreshFrames < stage2RefreshFrames || stage2Workers <= 0 ||
       stage2SmoothingWindow <= 0 || stage2SwitchConfirmations <= 0 ||
@@ -218,6 +219,8 @@ json RuntimeConfig::toJson() const {
       {"image_size", imageSize},
       {"yolo_device", yoloDevice},
       {"yolo_cpu_threads", yoloCpuThreads},
+      {"yolo_frame_stride", yoloFrameStride},
+      {"yolo_dense_force_threshold", yoloDenseForceThreshold},
       {"provider", provider},
       {"rknn_model_dir", displayPath(rknnModelDir)},
       {"face_gallery", displayPath(faceGallery)},
@@ -319,6 +322,10 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
       config.yoloDevice = next();
     } else if (option == "--yolo-cpu-threads") {
       config.yoloCpuThreads = integerValue(option, next());
+    } else if (option == "--yolo-frame-stride") {
+      config.yoloFrameStride = integerValue(option, next());
+    } else if (option == "--yolo-dense-force-threshold") {
+      config.yoloDenseForceThreshold = integerValue(option, next());
     } else if (option == "--provider") {
       config.provider = next();
     } else if (option == "--rknn-model-dir") {
@@ -452,6 +459,12 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
           "--profile competition requires --provider rknn");
     }
     config.provider = "rknn";
+    if (explicitOptions.count("--yolo-frame-stride") == 0) {
+      config.yoloFrameStride = 2;
+    }
+    if (explicitOptions.count("--yolo-dense-force-threshold") == 0) {
+      config.yoloDenseForceThreshold = 8;
+    }
     config.noUi = true;
     config.startPaused = false;
     config.openBrowser = false;
@@ -507,6 +520,8 @@ Models:
   --rknn-model-dir PATH          converted RK3588 model directory
   --conf VALUE                   YOLO confidence threshold (default 0.25)
   --iou VALUE                    YOLO NMS IoU (default 0.45)
+  --yolo-frame-stride N          run full-frame YOLO every N processed frames
+  --yolo-dense-force-threshold N force full-frame YOLO at/above N targets; 0 disables
   --knife-min-area-ratio VALUE   reject tiny knife boxes (default disabled)
 
 Runtime:

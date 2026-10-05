@@ -99,6 +99,10 @@ class TemporalDecisionSmoother:
             "margin": decision.margin,
         }
 
+    @property
+    def _stable_switch_confirmations(self) -> int:
+        return self.switch_confirmations + 1
+
     def _metadata(
         self,
         decision: Stage2Decision,
@@ -111,6 +115,7 @@ class TemporalDecisionSmoother:
                 "window_size": self.window_size,
                 "samples": len(self._history),
                 "switch_confirmations": self.switch_confirmations,
+                "stable_switch_confirmations": self._stable_switch_confirmations,
                 "stable_class": self._stable_class,
                 "proposed_class": proposed_class,
                 "pending_class": self._pending_class,
@@ -253,7 +258,7 @@ class TemporalDecisionSmoother:
                 self._pending_count = 0
             elif proposed == self._pending_class:
                 self._pending_count += 1
-                if self._pending_count >= self.switch_confirmations:
+                if self._pending_count >= self._stable_switch_confirmations:
                     self._stable_class = proposed
                     self._pending_class = None
                     self._pending_count = 0
@@ -324,6 +329,7 @@ class _Track:
     bbox_xyxy: tuple[int, int, int, int]
     last_seen_frame: int
     decision: Stage2Decision | None = None
+    last_raw_decision: Stage2Decision | None = None
     result_frame: int | None = None
     result_detection_id: str | None = None
     result_detection: Stage1Detection | None = None
@@ -336,6 +342,8 @@ class _Track:
     smoother: TemporalDecisionSmoother | None = None
     velocity_xyxy: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
     hits: int = 1
+    stage2_attempts: int = 0
+    urgent_refreshes: int = 0
 
 
 def bbox_iou(
@@ -362,6 +370,18 @@ def _box_geometry(
     width = float(max(1, x2 - x1))
     height = float(max(1, y2 - y1))
     return (x1 + x2) / 2.0, (y1 + y2) / 2.0, width, height
+
+
+def _has_matched_class(decision: Stage2Decision) -> bool:
+    return decision.status == "matched" and decision.predicted_class is not None
+
+
+def _candidate_label(decision: Stage2Decision) -> str | None:
+    return decision.candidate_class or decision.predicted_class
+
+
+def _bounded_interval(value: int, lower: int, upper: int) -> int:
+    return max(lower, min(value, upper))
 
 
 class AsyncStage2Scheduler:
@@ -508,13 +528,16 @@ class AsyncStage2Scheduler:
             math.hypot(predicted_w, predicted_h),
         )
         frame_gap = max(1, detection.frame_index - track.last_seen_frame)
-        distance_limit = max(24.0, box_diagonal * 0.45) * min(
-            2.0, math.sqrt(frame_gap)
+        overlap = max(predicted_overlap, previous_overlap)
+        minimum_overlap = 0.08 if track.hits >= 2 else 0.16
+        if overlap < minimum_overlap:
+            return None
+        if frame_gap > 3 and overlap < 0.25:
+            return None
+        distance_limit = max(16.0, box_diagonal * 0.28) * min(
+            1.5, math.sqrt(frame_gap)
         )
-        if (
-            max(predicted_overlap, previous_overlap) < self.iou_threshold
-            and center_distance > distance_limit
-        ):
+        if overlap < self.iou_threshold and center_distance > distance_limit:
             return None
 
         normalized_distance = center_distance / max(box_diagonal, 1.0)
@@ -619,6 +642,83 @@ class AsyncStage2Scheduler:
             resolved.append(track)
         return resolved
 
+    def _weak_matched_decision(
+        self,
+        track: _Track,
+        decision: Stage2Decision,
+    ) -> bool:
+        if not _has_matched_class(decision):
+            return False
+        threshold, min_margin = self._thresholds[track.major_class]
+        weak_score = (
+            decision.score is not None
+            and float(decision.score) < threshold + 0.08
+        )
+        weak_margin = (
+            decision.margin is not None
+            and float(decision.margin) < min_margin + 0.05
+        )
+        return weak_score or weak_margin
+
+    def _strong_conflict(
+        self,
+        track: _Track,
+        raw_decision: Stage2Decision,
+    ) -> bool:
+        if (
+            track.decision is None
+            or not _has_matched_class(track.decision)
+            or raw_decision.status != "matched"
+        ):
+            return False
+        raw_label = _candidate_label(raw_decision)
+        if raw_label is None or raw_label == track.decision.predicted_class:
+            return False
+        if not raw_label.startswith(track.major_class):
+            return False
+
+        threshold, min_margin = self._thresholds[track.major_class]
+        has_quality_signal = (
+            raw_decision.score is not None
+            or raw_decision.margin is not None
+            or bool(raw_decision.class_scores)
+        )
+        strong_score = (
+            raw_decision.score is None
+            or float(raw_decision.score) >= threshold + 0.12
+        )
+        strong_margin = (
+            raw_decision.margin is None
+            or float(raw_decision.margin) >= min_margin + 0.08
+        )
+        return has_quality_signal and strong_score and strong_margin
+
+    def _adaptive_refresh_interval(self, track: _Track) -> int:
+        early_interval = _bounded_interval(self.refresh_frames // 5, 2, 3)
+        uncertain_interval = _bounded_interval(self.refresh_frames // 3, 3, 5)
+        weak_interval = _bounded_interval(self.refresh_frames // 2, 5, 10)
+        challenge_interval = _bounded_interval(self.refresh_frames // 8, 1, 2)
+
+        if track.decision is None:
+            return 0
+        if track.urgent_refreshes > 0:
+            return challenge_interval
+        if track.stage2_attempts < 3 and not _has_matched_class(track.decision):
+            return early_interval
+        if not _has_matched_class(track.decision):
+            return uncertain_interval
+        if (
+            track.last_raw_decision is not None
+            and track.last_raw_decision.status != "matched"
+        ):
+            return uncertain_interval
+        if self._weak_matched_decision(track, track.decision) or (
+            track.last_raw_decision is not None
+            and self._weak_matched_decision(track, track.last_raw_decision)
+        ):
+            return weak_interval
+        return self.stable_refresh_frames
+
     def _submit(
         self,
         track: _Track,
@@ -657,11 +757,18 @@ class AsyncStage2Scheduler:
                 if current is None or current.job_token != token:
                     return
                 current.future = None
+                conflict = self._strong_conflict(current, decision)
+                current.last_raw_decision = decision
+                current.stage2_attempts += 1
                 current.decision = (
                     current.smoother.update(decision)
                     if current.smoother is not None
                     else decision
                 )
+                if conflict:
+                    current.urgent_refreshes = max(current.urgent_refreshes, 2)
+                elif current.urgent_refreshes > 0:
+                    current.urgent_refreshes -= 1
                 current.result_frame = source_frame
                 current.result_detection_id = source_id
                 current.result_detection = detection
@@ -704,21 +811,23 @@ class AsyncStage2Scheduler:
             if track.result_frame is not None
             else None
         )
-        refresh_interval = (
-            self.stable_refresh_frames
-            if track.decision is not None
-            and track.decision.status == "matched"
-            and track.decision.predicted_class is not None
-            else self.refresh_frames
-        )
+        refresh_interval = self._adaptive_refresh_interval(track)
+        has_unemitted_result = track.revision > track.emitted_revision
+        predicted_detection = ":trk" in detection.detection_id
         needs_refresh = (
-            track.decision is None
-            or result_age is None
-            or result_age >= refresh_interval
+            (
+                track.decision is None
+                or result_age is None
+                or result_age >= refresh_interval
+            )
+            and not has_unemitted_result
+            and not predicted_detection
         )
         if needs_refresh and track.future is None:
             crop_path = prepare_job() if prepare_job is not None else None
             self._submit(track, detection, recognize, crop_path)
+            if track.urgent_refreshes > 0:
+                track.urgent_refreshes -= 1
 
         if track.decision is None:
             return Stage2Resolution(

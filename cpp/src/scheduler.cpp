@@ -1,6 +1,7 @@
 #include "insight_cup/scheduler.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <condition_variable>
 #include <deque>
@@ -244,7 +245,7 @@ class TemporalDecisionSmoother {
         clearPending();
       } else {
         updatePending(proposed);
-        if (pendingCount_ >= switchConfirmations_) {
+        if (pendingCount_ >= stableSwitchConfirmations()) {
           stableClass_ = proposed;
           clearPending();
         }
@@ -304,6 +305,7 @@ class TemporalDecisionSmoother {
         {"window_size", windowSize_},
         {"samples", history_.size()},
         {"switch_confirmations", switchConfirmations_},
+        {"stable_switch_confirmations", stableSwitchConfirmations()},
         {"stable_class", stableClass_ ? json(*stableClass_) : json(nullptr)},
         {"proposed_class", proposed ? json(*proposed) : json(nullptr)},
         {"pending_class", pendingClass_ ? json(*pendingClass_) : json(nullptr)},
@@ -354,6 +356,10 @@ class TemporalDecisionSmoother {
     pendingCount_ = 0;
   }
 
+  int stableSwitchConfirmations() const {
+    return switchConfirmations_ + 1;
+  }
+
   std::string method_;
   int windowSize_ = 3;
   int switchConfirmations_ = 2;
@@ -373,6 +379,7 @@ struct Track {
   Box bbox;
   int lastSeenFrame = 0;
   std::optional<Stage2Decision> decision;
+  std::optional<Stage2Decision> lastRawDecision;
   std::optional<int> resultFrame;
   std::optional<std::string> resultDetectionId;
   std::optional<std::string> resultCropPath;
@@ -385,6 +392,8 @@ struct Track {
   std::unique_ptr<TemporalDecisionSmoother> smoother;
   std::array<float, 4> velocity = {0.0F, 0.0F, 0.0F, 0.0F};
   int hits = 1;
+  int stage2Attempts = 0;
+  int urgentRefreshes = 0;
 };
 
 std::array<float, 4> boxValues(const Box& box) {
@@ -397,6 +406,27 @@ std::tuple<float, float, float, float> boxGeometry(const Box& box) {
   const float height = std::max(1, box.height());
   return {(box.x1 + box.x2) * 0.5F, (box.y1 + box.y2) * 0.5F, width,
           height};
+}
+
+bool hasMatchedClass(const Stage2Decision& decision) {
+  return decision.status == "matched" && decision.predictedClass;
+}
+
+std::optional<std::string> candidateLabel(const Stage2Decision& decision) {
+  if (decision.candidateClass) {
+    return decision.candidateClass;
+  }
+  return decision.predictedClass;
+}
+
+int boundedInterval(int value, int lower, int upper) {
+  return std::max(lower, std::min(value, upper));
+}
+
+std::string lowerLabel(std::string value) {
+  std::transform(value.begin(), value.end(), value.begin(),
+                 [](unsigned char character) { return std::tolower(character); });
+  return value;
 }
 
 std::shared_ptr<const Stage2Evidence> makeEvidence(
@@ -529,6 +559,7 @@ class AsyncStage2Scheduler::Impl {
     for (std::size_t index : asyncIndexes) {
       asyncDetections.push_back(detections[index]);
     }
+    activeTargetCount_ = static_cast<int>(asyncDetections.size());
     const auto associated = associateTracks(asyncDetections);
     for (std::size_t position = 0; position < asyncIndexes.size(); ++position) {
       const std::size_t index = asyncIndexes[position];
@@ -658,10 +689,23 @@ class AsyncStage2Scheduler::Impl {
     const float diagonal = std::max(std::hypot(currentWidth, currentHeight),
                                     std::hypot(predictedWidth, predictedHeight));
     const int frameGap = std::max(1, detection.frameIndex - track.lastSeenFrame);
-    const float distanceLimit = std::max(24.0F, diagonal * 0.45F) *
-                                std::min(2.0F, std::sqrt(static_cast<float>(frameGap)));
-    if (std::max(predictedOverlap, previousOverlap) < iouThreshold_ &&
-        centerDistance > distanceLimit) {
+    const float overlap = std::max(predictedOverlap, previousOverlap);
+    const bool denseFrame = activeTargetCount_ >= 8;
+    if (denseFrame) {
+      const float minimumOverlap = track.hits >= 2 ? 0.08F : 0.16F;
+      if (overlap < minimumOverlap) {
+        return std::nullopt;
+      }
+      if (frameGap > 3 && overlap < 0.25F) {
+        return std::nullopt;
+      }
+    }
+    const float distanceLimit =
+        denseFrame ? std::max(16.0F, diagonal * 0.28F) *
+                         std::min(1.5F, std::sqrt(static_cast<float>(frameGap)))
+                   : std::max(24.0F, diagonal * 0.45F) *
+                         std::min(2.0F, std::sqrt(static_cast<float>(frameGap)));
+    if (overlap < iouThreshold_ && centerDistance > distanceLimit) {
       return std::nullopt;
     }
     const float normalizedDistance = centerDistance / std::max(diagonal, 1.0F);
@@ -758,6 +802,103 @@ class AsyncStage2Scheduler::Impl {
     return resolved;
   }
 
+  bool weakMatchedDecision(const Track& track,
+                           const Stage2Decision& decision) const {
+    if (!hasMatchedClass(decision)) {
+      return false;
+    }
+    const auto threshold = thresholds_.at(track.majorClass);
+    const bool weakScore =
+        decision.score && *decision.score < threshold.first + 0.08F;
+    const bool weakMargin =
+        decision.margin && *decision.margin < threshold.second + 0.05F;
+    return weakScore || weakMargin;
+  }
+
+  bool strongConflict(const Track& track,
+                      const Stage2Decision& rawDecision) const {
+    if (!track.decision || !hasMatchedClass(*track.decision) ||
+        rawDecision.status != "matched") {
+      return false;
+    }
+    const auto rawLabel = candidateLabel(rawDecision);
+    if (!rawLabel || *rawLabel == *track.decision->predictedClass) {
+      return false;
+    }
+    if (rawLabel->rfind(track.majorClass, 0) != 0) {
+      return false;
+    }
+
+    const auto threshold = thresholds_.at(track.majorClass);
+    const bool hasQualitySignal =
+        rawDecision.score || rawDecision.margin || !rawDecision.classScores.empty();
+    const bool strongScore =
+        !rawDecision.score || *rawDecision.score >= threshold.first + 0.12F;
+    const bool strongMargin =
+        !rawDecision.margin || *rawDecision.margin >= threshold.second + 0.08F;
+    return hasQualitySignal && strongScore && strongMargin;
+  }
+
+  bool yoloStableVeto(const Track& track, const Stage2Decision& rawDecision,
+                      const YoloDebugInfo& debug) const {
+    constexpr int kDenseVetoThreshold = 8;
+    if (activeTargetCount_ < kDenseVetoThreshold) {
+      return false;
+    }
+    if (!track.decision || !hasMatchedClass(*track.decision) ||
+        rawDecision.status != "matched" || debug.rawClassName.empty()) {
+      return false;
+    }
+    const auto proposed = candidateLabel(rawDecision);
+    if (!proposed || *proposed == *track.decision->predictedClass) {
+      return false;
+    }
+    if (proposed->rfind(track.majorClass, 0) != 0) {
+      return false;
+    }
+    const std::string stable = lowerLabel(*track.decision->predictedClass);
+    if (lowerLabel(debug.rawClassName) != stable) {
+      return false;
+    }
+
+    const auto threshold = thresholds_.at(track.majorClass);
+    const bool veryStrongScore =
+        rawDecision.score && *rawDecision.score >= threshold.first + 0.25F;
+    const bool veryStrongMargin =
+        rawDecision.margin && *rawDecision.margin >= threshold.second + 0.35F;
+    return !(veryStrongScore && veryStrongMargin);
+  }
+
+  int adaptiveRefreshInterval(const Track& track) const {
+    const int earlyInterval = boundedInterval(refreshFrames_ / 5, 2, 3);
+    const int uncertainInterval = boundedInterval(refreshFrames_ / 3, 3, 5);
+    const int weakInterval = boundedInterval(refreshFrames_ / 2, 5, 10);
+    const int challengeInterval = boundedInterval(refreshFrames_ / 8, 1, 2);
+
+    if (!track.decision) {
+      return 0;
+    }
+    if (track.urgentRefreshes > 0) {
+      return challengeInterval;
+    }
+    if (track.stage2Attempts < 3 && !hasMatchedClass(*track.decision)) {
+      return earlyInterval;
+    }
+    if (!hasMatchedClass(*track.decision)) {
+      return uncertainInterval;
+    }
+    if (track.lastRawDecision &&
+        track.lastRawDecision->status != "matched") {
+      return uncertainInterval;
+    }
+    if (weakMatchedDecision(track, *track.decision) ||
+        (track.lastRawDecision &&
+         weakMatchedDecision(track, *track.lastRawDecision))) {
+      return weakInterval;
+    }
+    return stableRefreshFrames_;
+  }
+
   void submit(const std::shared_ptr<Track>& track,
               Stage1Detection detection,
               const YoloDebugInfo& debug,
@@ -796,10 +937,26 @@ class AsyncStage2Scheduler::Impl {
       }
       auto& current = found->second;
       current->inFlight = false;
+      const bool veto = yoloStableVeto(*current, decision, debug);
+      const bool conflict = strongConflict(*current, decision);
+      current->lastRawDecision = decision;
+      ++current->stage2Attempts;
+      if (veto) {
+        current->urgentRefreshes = std::max(current->urgentRefreshes, 2);
+        current->resultFrame = detection.frameIndex;
+        current->inferenceMs = inferenceMs;
+        idleCondition_.notify_all();
+        return;
+      }
       auto evidence = makeEvidence(detection, debug, yoloClassScores, decision);
       current->decision = current->smoother
                               ? current->smoother->update(decision)
                               : std::optional<Stage2Decision>(decision);
+      if (conflict) {
+        current->urgentRefreshes = std::max(current->urgentRefreshes, 2);
+      } else if (current->urgentRefreshes > 0) {
+        --current->urgentRefreshes;
+      }
       current->resultFrame = detection.frameIndex;
       current->resultDetectionId = detection.detectionId;
       current->resultCropPath = cropPath;
@@ -821,13 +978,13 @@ class AsyncStage2Scheduler::Impl {
         track->resultFrame
             ? std::optional<int>(detection.frameIndex - *track->resultFrame)
             : std::nullopt;
-    const int refreshInterval =
-        track->decision && track->decision->status == "matched" &&
-                track->decision->predictedClass
-            ? stableRefreshFrames_
-            : refreshFrames_;
-    const bool needsRefresh = !track->decision || !resultAge ||
-                              *resultAge >= refreshInterval;
+    const int refreshInterval = adaptiveRefreshInterval(*track);
+    const bool hasUnemittedResult = track->revision > track->emittedRevision;
+    const bool predictedDetection =
+        detection.detectionId.find(":trk") != std::string::npos;
+    const bool needsRefresh =
+        (!track->decision || !resultAge || *resultAge >= refreshInterval) &&
+        !hasUnemittedResult && !predictedDetection;
     if (needsRefresh && !track->inFlight) {
       Stage1Detection preparedDetection = detection;
       std::optional<std::string> cropPath;
@@ -838,6 +995,9 @@ class AsyncStage2Scheduler::Impl {
       }
       submit(track, std::move(preparedDetection), debug,
              std::move(yoloClassScores), recognize, cropPath);
+      if (track->urgentRefreshes > 0) {
+        --track->urgentRefreshes;
+      }
     }
     if (!track->decision) {
       Stage2Decision processing;
@@ -877,6 +1037,7 @@ class AsyncStage2Scheduler::Impl {
   std::map<int, std::shared_ptr<Track>> tracks_;
   int nextTrackId_ = 1;
   std::optional<int> activeFrame_;
+  int activeTargetCount_ = 0;
   std::set<int> usedTrackIds_;
   bool closed_ = false;
   std::mutex mutex_;
