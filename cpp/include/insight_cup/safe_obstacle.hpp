@@ -83,6 +83,8 @@ class SafeObstacleMonitor {
   bool configured_ = false;
 
   std::optional<int> candidateDistanceCm_;
+  std::deque<int> distanceHistoryCm_;
+  std::optional<double> filteredDistanceCm_;
   cv::Point2f candidateCenter_;
   Box candidateBox_;
   float candidateConfidence_ = 0.0F;

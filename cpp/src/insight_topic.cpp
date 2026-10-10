@@ -69,7 +69,7 @@ InsightTopic::~InsightTopic() {
 
 void InsightTopic::publish(const json& payload) {
   std_msgs::msg::String message;
-  message.data = payload.dump(2);
+  message.data = payload.dump();
   publisher_->publish(std::move(message));
 }
 

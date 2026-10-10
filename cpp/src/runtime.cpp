@@ -1717,55 +1717,73 @@ cv::Mat RecognitionRuntime::processFrame(
   // not immediately overwrite it with the ordinary empty-target aggregate
   // message below; that made /insight appear to lose the result to subscribers.
   bool publishedTargetEventThisFrame = false;
-  if (inspectionHoldActive_ && !inspectionReported_ && !labels.empty()) {
-    const std::set<std::string> currentLabels(labels.begin(), labels.end());
-    if (currentLabels == inspectionStableLabels_) {
-      ++inspectionStableFrames_;
-    } else {
-      inspectionStableLabels_ = currentLabels;
-      inspectionStableFrames_ = 1;
-    }
-    const int requiredStableFrames =
-        std::max(2, config_.stage2SmoothingWindow);
-    if (inspectionStableFrames_ >= requiredStableFrames) {
-      json targetLabels = json::array();
-      for (const auto& label : labels) {
-        targetLabels.push_back(label);
-      }
-      ++recognitionEventId_;
-      json finalEvent = {
-          {"timestamp_ms",
-           static_cast<std::int64_t>(std::chrono::duration_cast<
-               std::chrono::milliseconds>(std::chrono::system_clock::now()
-                                              .time_since_epoch())
-                                            .count())},
-          {"obstacle_detected",
-           safeState ? safeState->obstacle : false},
-          {"obstacle_distance_cm",
-           safeState && safeState->obstacle ? safeState->distanceCm : 0},
-          {"target_detected", true},
-          {"targets", targetLabels}};
-      if (insightPublisher_) {
-        insightPublisher_(finalEvent);
-        publishedTargetEventThisFrame = true;
-      }
-      logger_.info("INSIGHT target_event=" +
-                   std::to_string(recognitionEventId_) +
-                   " targets=" + finalEvent["targets"].dump());
-      inspectionReported_ = true;
+  const int personLabelCount = static_cast<int>(std::count_if(
+      labels.begin(), labels.end(), [](const std::string& label) {
+        return !label.empty() && label.front() == 'f';
+      }));
+  const int knifeLabelCount = static_cast<int>(std::count_if(
+      labels.begin(), labels.end(), [](const std::string& label) {
+        return !label.empty() && label.front() == 'k';
+      }));
+  const bool completePersonKnifePair =
+      labels.size() == 2 && personLabelCount == 1 && knifeLabelCount == 1;
+
+  if (inspectionHoldActive_ && !inspectionReported_) {
+    if (!completePersonKnifePair) {
       inspectionStableFrames_ = 0;
-      bool released = true;
-      if (motionHoldRequester_) {
-        released = motionHoldRequester_(false, "");
-      }
-      if (released) {
-        inspectionHoldActive_ = false;
-        inspectionReleasePending_ = false;
-        logger_.info("INSPECTION hold=false frame=" +
-                     std::to_string(frameIndex));
+      inspectionStableLabels_.clear();
+    } else {
+      const std::set<std::string> currentLabels(labels.begin(), labels.end());
+      if (currentLabels == inspectionStableLabels_) {
+        ++inspectionStableFrames_;
       } else {
-        inspectionReleasePending_ = true;
-        logger_.error("INSPECTION hold=false failed; retrying");
+        inspectionStableLabels_ = currentLabels;
+        inspectionStableFrames_ = 1;
+      }
+      const int requiredStableFrames = config_.inspectionStableFrames;
+      logger_.info("INSIGHT stability labels=" + json(labels).dump() +
+                   " frames=" + std::to_string(inspectionStableFrames_) +
+                   "/" + std::to_string(requiredStableFrames));
+      if (inspectionStableFrames_ >= requiredStableFrames) {
+        json targetLabels = json::array();
+        for (const auto& label : labels) {
+          targetLabels.push_back(label);
+        }
+        ++recognitionEventId_;
+        json finalEvent = {
+            {"timestamp_ms",
+             static_cast<std::int64_t>(std::chrono::duration_cast<
+                 std::chrono::milliseconds>(std::chrono::system_clock::now()
+                                                .time_since_epoch())
+                                              .count())},
+            {"obstacle_detected",
+             safeState ? safeState->obstacle : false},
+            {"obstacle_distance_cm",
+             safeState && safeState->obstacle ? safeState->distanceCm : 0},
+            {"target_detected", true},
+            {"targets", targetLabels}};
+        if (insightPublisher_) {
+          insightPublisher_(finalEvent);
+          publishedTargetEventThisFrame = true;
+        }
+        logger_.info("INSIGHT target_event=" +
+                     std::to_string(recognitionEventId_) +
+                     " targets=" + finalEvent["targets"].dump());
+        inspectionReported_ = true;
+        inspectionStableFrames_ = 0;
+        bool released = true;
+        if (motionHoldRequester_) {
+          released = motionHoldRequester_(false, "");
+        }
+        if (released) {
+          inspectionHoldActive_ = false;
+          inspectionReleasePending_ = false;
+          logger_.info("INSPECTION hold=false frame=" +
+                       std::to_string(frameIndex));
+        } else {
+          inspectionReleasePending_ = true;
+          logger_.error("INSPECTION hold=false failed; retrying");
+        }
       }
     }
   }

@@ -206,6 +206,7 @@ void RuntimeConfig::validate() const {
       knifeCpuThreads <= 0 || stage2RefreshFrames <= 0 ||
       stage2StableRefreshFrames < stage2RefreshFrames || stage2Workers <= 0 ||
       stage2SmoothingWindow <= 0 || stage2SwitchConfirmations <= 0 ||
+      inspectionStableFrames <= 0 ||
       stage1Confirmations <= 0 ||
       stage2AreaTolerance < 0.0F || stage2AreaTolerance > 1.0F ||
       safeStableSeconds <= 0.0F || safeConfidence < 0.0F ||
@@ -276,6 +277,7 @@ json RuntimeConfig::toJson() const {
       {"stage2_smoothing", stage2Smoothing},
       {"stage2_smoothing_window", stage2SmoothingWindow},
       {"stage2_switch_confirmations", stage2SwitchConfirmations},
+      {"inspection_stable_frames", inspectionStableFrames},
       {"stage1_confirmations", stage1Confirmations},
       {"stage1_roi_enabled", stage1RoiEnabled},
       {"stage1_roi_config", displayPath(stage1RoiConfig)},
@@ -427,6 +429,8 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
       config.stage2SmoothingWindow = integerValue(option, next());
     } else if (option == "--stage2-switch-confirmations") {
       config.stage2SwitchConfirmations = integerValue(option, next());
+    } else if (option == "--inspection-stable-frames") {
+      config.inspectionStableFrames = integerValue(option, next());
     } else if (option == "--stage1-confirmations") {
       config.stage1Confirmations = integerValue(option, next());
     } else if (option == "--stage1-roi-config") {
@@ -598,11 +602,12 @@ Models:
 Runtime:
   --profile MODE                 custom, competition, or ui-recording
   --stage1-confirmations N       YOLO detections required before stage 2 (default 2)
+  --inspection-stable-frames N   matching f+k frames required for /insight (default 10)
   --stage1-roi-config PATH       #7A ROI and #1..#4 pixel-area calibration JSON
   --no-stage1-roi                 disable #7A recognition ROI gating
   --stage2-area-tolerance VALUE  relative area tolerance around #1..#4 mean (default 0.30)
   --safe-zone-config PATH        obstacle ROI/distance calibration JSON
-  --safe-stable-seconds N        seconds of stable obstacle detection (default 2)
+  --safe-stable-seconds N        legacy diagnostic value; no longer gates /safe
   --safe-confidence VALUE        minimum YOLO obstacle confidence (default 0.25)
   --no-safe                       disable /safe obstacle monitoring
   --camera-fps N                 shared color/depth capture rate (default 15)

@@ -32,9 +32,9 @@ SafeTopic::~SafeTopic() {
 
 void SafeTopic::publish(const SafeObstacleState& state) {
   std_msgs::msg::String message;
-  // Keep std_msgs/String for compatibility with existing subscribers, but
-  // emit indented JSON so ros2 topic echo renders it as a readable block.
-  message.data = state.toJson().dump(2);
+  // Keep each ROS String sample on one line; YAML echo escapes embedded
+  // newlines in multi-line JSON as literal "\\n" sequences.
+  message.data = state.toJson().dump();
   publisher_->publish(std::move(message));
 }
 

@@ -587,6 +587,8 @@ std::optional<int> SafeObstacleMonitor::distanceForBox(const Box& box) const {
 
 void SafeObstacleMonitor::resetCandidate() {
   candidateDistanceCm_.reset();
+  distanceHistoryCm_.clear();
+  filteredDistanceCm_.reset();
   candidateCenter_ = {};
   candidateBox_ = {};
   candidateConfidence_ = 0.0F;
@@ -650,9 +652,7 @@ SafeObstacleState SafeObstacleMonitor::update(
   const cv::Point2f center(
       0.5F * static_cast<float>(box.x1 + box.x2),
       0.5F * static_cast<float>(box.y1 + box.y2));
-  const bool sameCandidate = candidateDistanceCm_ &&
-                             *candidateDistanceCm_ == *bestDistance &&
-                             candidateBox_.valid() &&
+  const bool sameCandidate = candidateBox_.valid() &&
                              cv::norm(center - candidateCenter_) <=
                                  std::max(20.0F, 0.25F *
                                                      static_cast<float>(std::max(
@@ -660,7 +660,6 @@ SafeObstacleState SafeObstacleMonitor::update(
                                                          frameSize.height)));
   if (!sameCandidate) {
     resetCandidate();
-    candidateDistanceCm_ = *bestDistance;
     candidateCenter_ = center;
     candidateBox_ = box;
     candidateConfidence_ = best->handoff.confidence;
@@ -673,6 +672,28 @@ SafeObstacleState SafeObstacleMonitor::update(
     candidateConfidence_ = std::max(candidateConfidence_, best->handoff.confidence);
     ++candidateFrames_;
   }
+
+  // Pixel-only range estimates move between calibration bins when the car
+  // moves. Keep a short robust history and an EMA so one jittery YOLO box
+  // cannot make the reported distance jump or reset the candidate.
+  distanceHistoryCm_.push_back(*bestDistance);
+  while (distanceHistoryCm_.size() > 5) {
+    distanceHistoryCm_.pop_front();
+  }
+  std::vector<int> orderedDistances(distanceHistoryCm_.begin(),
+                                    distanceHistoryCm_.end());
+  std::sort(orderedDistances.begin(), orderedDistances.end());
+  const double medianDistance =
+      orderedDistances[orderedDistances.size() / 2];
+  if (!filteredDistanceCm_) {
+    filteredDistanceCm_ = medianDistance;
+  } else {
+    constexpr double kDistanceEmaAlpha = 0.35;
+    *filteredDistanceCm_ +=
+        kDistanceEmaAlpha * (medianDistance - *filteredDistanceCm_);
+  }
+  candidateDistanceCm_ = static_cast<int>(std::lround(
+      std::clamp(*filteredDistanceCm_, 20.0, 100.0) / 5.0) * 5.0);
 
   double stableSeconds = 0.0;
   bool usedSourceTimestamp = false;
@@ -693,8 +714,10 @@ SafeObstacleState SafeObstacleMonitor::update(
     stableSeconds = static_cast<double>(processedIndex - candidateStartFrame_) /
                     std::max(1.0, effectiveFps);
   }
-  state.status = stableSeconds >= config_.safeStableSeconds ? "obstacle" : "confirming";
-  state.obstacle = state.status == "obstacle";
+  // Obstacle confirmation is immediate. safeStableSeconds remains in the
+  // diagnostic payload for compatibility, but is no longer a gate.
+  state.status = "obstacle";
+  state.obstacle = true;
   state.distanceCm = *candidateDistanceCm_;
   state.distanceM = static_cast<double>(state.distanceCm) / 100.0;
   state.stableSeconds = stableSeconds;

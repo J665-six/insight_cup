@@ -68,6 +68,7 @@ struct RuntimeConfig {
   std::string stage2Smoothing = "vote";
   int stage2SmoothingWindow = 3;
   int stage2SwitchConfirmations = 2;
+  int inspectionStableFrames = 10;
   int stage1Confirmations = 2;
 
   // Stage-1 YOLO uses the explicit #1A polygon for obstacles and #7A for
@@ -79,10 +80,11 @@ struct RuntimeConfig {
   float stage2AreaTolerance = 0.30F;
 
   // Obstacle safety monitor. It reads the polygon calibration saved by the
-  // distance tool and publishes a stable front obstacle state on /safe.
+  // distance tool and publishes the current front obstacle state on /safe.
   bool safeEnabled = true;
   fs::path safeZoneConfig = fs::path(INSIGHT_CUP_PROJECT_ROOT) /
                             "outputs/distance/obstacle_distance_new.json";
+  // Kept for manifest/API compatibility; obstacle confirmation is immediate.
   float safeStableSeconds = 2.0F;
   float safeConfidence = 0.25F;
 

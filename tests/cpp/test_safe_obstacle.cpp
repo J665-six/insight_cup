@@ -39,7 +39,7 @@ void writeConfig(const std::string& path) {
   })JSON";
 }
 
-void testTwoSecondStabilityAndDistance() {
+void testImmediateObstacleAndDistance() {
   const std::string configPath = "/tmp/insight_safe_test.json";
   writeConfig(configPath);
   insight_cup::RuntimeConfig config;
@@ -49,15 +49,12 @@ void testTwoSecondStabilityAndDistance() {
   insight_cup::Logger logger;
   insight_cup::SafeObstacleMonitor monitor(config, logger);
 
-  auto beforeStable = monitor.update(detectionAt(50.0F, 80.0F), {100, 100}, 0,
-                                    0.0);
-  require(!beforeStable.obstacle && beforeStable.status == "confirming",
-          "obstacle must remain confirming before two seconds");
-  auto stable = monitor.update(detectionAt(50.0F, 80.0F), {100, 100}, 30,
-                              2000.0);
-  require(stable.obstacle && stable.status == "obstacle",
-          "obstacle becomes stable after two seconds");
-  require(stable.distanceCm == 20 && std::abs(stable.distanceM - 0.2) < 1e-6,
+  auto immediate = monitor.update(detectionAt(50.0F, 80.0F), {100, 100}, 0,
+                                  0.0);
+  require(immediate.obstacle && immediate.status == "obstacle",
+          "obstacle must be reported immediately");
+  require(immediate.distanceCm == 20 &&
+              std::abs(immediate.distanceM - 0.2) < 1e-6,
           "nearest calibration center selects 20 cm");
 
   auto clear = monitor.update({}, {100, 100}, 31, 2066.0);
@@ -161,7 +158,7 @@ void testSingleDistanceLogMapsCentersToDistances() {
 
 int main() {
   try {
-    testTwoSecondStabilityAndDistance();
+    testImmediateObstacleAndDistance();
     testDistanceLogUsesTaggedObstacleRoi();
     testDistanceLogRejectsUnTaggedObstacleRoi();
     testSingleDistanceLogMapsCentersToDistances();
