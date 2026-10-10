@@ -454,7 +454,9 @@ class AsyncStage2Scheduler::Impl {
        bool asynchronous, int workersPerClass, std::string smoothingMethod,
        int smoothingWindow, int switchConfirmations, float faceThreshold,
        float faceMinMargin, float knifeThreshold, float knifeMinMargin)
-      : refreshFrames_(refreshFrames),
+      : referenceRefreshFrames_(refreshFrames),
+        referenceStableRefreshFrames_(stableRefreshFrames),
+        refreshFrames_(refreshFrames),
         stableRefreshFrames_(stableRefreshFrames),
         iouThreshold_(iouThreshold),
         asynchronous_(asynchronous),
@@ -470,6 +472,18 @@ class AsyncStage2Scheduler::Impl {
       facePool_ = std::make_unique<ThreadPool>(workersPerClass_);
       knifePool_ = std::make_unique<ThreadPool>(workersPerClass_);
     }
+  }
+
+  void setFrameRate(double frameRate) {
+    if (!std::isfinite(frameRate) || frameRate <= 0.0) {
+      return;
+    }
+    frameRate_ = std::clamp(frameRate, 1.0, 240.0);
+    refreshFrames_ = scaledFrameCount(referenceRefreshFrames_);
+    stableRefreshFrames_ = std::max(
+        refreshFrames_, scaledFrameCount(referenceStableRefreshFrames_));
+    maxIdleFrames_ = std::max(scaledFrameCount(15), refreshFrames_ * 2);
+    staleJobGapFrames_ = std::max(1, scaledFrameCount(5));
   }
 
   std::vector<Stage2Resolution> resolveFrame(
@@ -638,6 +652,8 @@ class AsyncStage2Scheduler::Impl {
   }
 
   bool asynchronous() const { return asynchronous_; }
+  int refreshFrames() const { return refreshFrames_; }
+  int stableRefreshFrames() const { return stableRefreshFrames_; }
 
  private:
   void startFrame(int frameIndex) {
@@ -657,7 +673,8 @@ class AsyncStage2Scheduler::Impl {
   }
 
   Box predictedBox(const Track& track, int frameIndex) const {
-    const int gap = std::max(0, frameIndex - track.lastSeenFrame);
+    const double gap = normalizedFrameGap(
+        std::max(0, frameIndex - track.lastSeenFrame));
     const auto values = boxValues(track.bbox);
     Box predicted{
         static_cast<int>(std::nearbyint(values[0] + track.velocity[0] * gap)),
@@ -688,7 +705,8 @@ class AsyncStage2Scheduler::Impl {
         std::hypot(currentX - predictedX, currentY - predictedY);
     const float diagonal = std::max(std::hypot(currentWidth, currentHeight),
                                     std::hypot(predictedWidth, predictedHeight));
-    const int frameGap = std::max(1, detection.frameIndex - track.lastSeenFrame);
+    const double frameGap = normalizedFrameGap(
+        std::max(1, detection.frameIndex - track.lastSeenFrame));
     const float overlap = std::max(predictedOverlap, previousOverlap);
     const bool denseFrame = activeTargetCount_ >= 8;
     if (denseFrame) {
@@ -696,7 +714,7 @@ class AsyncStage2Scheduler::Impl {
       if (overlap < minimumOverlap) {
         return std::nullopt;
       }
-      if (frameGap > 3 && overlap < 0.25F) {
+      if (frameGap > 3.0 && overlap < 0.25F) {
         return std::nullopt;
       }
     }
@@ -732,8 +750,10 @@ class AsyncStage2Scheduler::Impl {
 
   void updateTrack(const std::shared_ptr<Track>& track,
                    const Stage1Detection& detection) {
-    const int frameGap = std::max(1, detection.frameIndex - track->lastSeenFrame);
-    if (frameGap > staleJobGapFrames_ && track->inFlight) {
+    const int rawFrameGap =
+        std::max(1, detection.frameIndex - track->lastSeenFrame);
+    const double frameGap = normalizedFrameGap(rawFrameGap);
+    if (rawFrameGap > staleJobGapFrames_ && track->inFlight) {
       ++track->jobToken;
       track->inFlight = false;
     }
@@ -899,6 +919,17 @@ class AsyncStage2Scheduler::Impl {
     return stableRefreshFrames_;
   }
 
+  double normalizedFrameGap(int rawFrameGap) const {
+    return std::max(0.0, static_cast<double>(rawFrameGap) * 30.0 /
+                              std::max(frameRate_, 1.0));
+  }
+
+  int scaledFrameCount(int referenceFrames) const {
+    return std::max(
+        1, static_cast<int>(std::lround(static_cast<double>(referenceFrames) *
+                                        frameRate_ / 30.0)));
+  }
+
   void submit(const std::shared_ptr<Track>& track,
               Stage1Detection detection,
               const YoloDebugInfo& debug,
@@ -1021,6 +1052,8 @@ class AsyncStage2Scheduler::Impl {
     return resolution;
   }
 
+  int referenceRefreshFrames_ = 15;
+  int referenceStableRefreshFrames_ = 30;
   int refreshFrames_ = 15;
   int stableRefreshFrames_ = 30;
   float iouThreshold_ = 0.55F;
@@ -1031,6 +1064,7 @@ class AsyncStage2Scheduler::Impl {
   int switchConfirmations_ = 2;
   int maxIdleFrames_ = 30;
   int staleJobGapFrames_ = 5;
+  double frameRate_ = 30.0;
   std::map<std::string, std::pair<float, float>> thresholds_;
   std::unique_ptr<ThreadPool> facePool_;
   std::unique_ptr<ThreadPool> knifePool_;
@@ -1056,6 +1090,18 @@ AsyncStage2Scheduler::AsyncStage2Scheduler(
           knifeMinMargin)) {}
 
 AsyncStage2Scheduler::~AsyncStage2Scheduler() { close(); }
+
+void AsyncStage2Scheduler::setFrameRate(double frameRate) {
+  impl_->setFrameRate(frameRate);
+}
+
+int AsyncStage2Scheduler::refreshFrames() const {
+  return impl_->refreshFrames();
+}
+
+int AsyncStage2Scheduler::stableRefreshFrames() const {
+  return impl_->stableRefreshFrames();
+}
 
 std::vector<Stage2Resolution> AsyncStage2Scheduler::resolveFrame(
     const std::vector<DetectedRegion>& regions,

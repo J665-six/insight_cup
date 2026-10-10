@@ -8,8 +8,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(INSIGHT_CUP_ENABLE_REALSENSE "Build Intel RealSense input support" ON)
 option(INSIGHT_CUP_ENABLE_RKNN "Build Rockchip RKNN NPU support" ON)
+option(INSIGHT_CUP_ENABLE_ROS2 "Publish stable recognition labels on ROS 2" ON)
 
-find_package(OpenCV 4.5 REQUIRED COMPONENTS core imgproc imgcodecs videoio dnn calib3d)
+find_package(OpenCV 4.5 REQUIRED COMPONENTS core imgproc imgcodecs videoio dnn calib3d highgui)
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -130,18 +131,48 @@ else()
   set(INSIGHT_CUP_HAS_REALSENSE 0)
 endif()
 
+set(INSIGHT_CUP_HAS_ROS2 0)
+if(INSIGHT_CUP_ENABLE_ROS2)
+  find_package(ament_cmake REQUIRED)
+  find_package(rclcpp REQUIRED)
+  find_package(std_msgs REQUIRED)
+  set(INSIGHT_CUP_HAS_ROS2 1)
+endif()
+
+set(INSIGHT_CUP_HAS_MOTION_HOLD 0)
+if(INSIGHT_CUP_HAS_ROS2)
+  find_package(mission_control_interfaces QUIET)
+  if(mission_control_interfaces_FOUND)
+    set(INSIGHT_CUP_HAS_MOTION_HOLD 1)
+  else()
+    message(WARNING
+            "mission_control_interfaces was not found; motion hold requests are disabled")
+  endif()
+endif()
+
 set(INSIGHT_CUP_SOURCES
   cpp/src/config.cpp
   cpp/src/gallery.cpp
+  cpp/src/knife/classification/recognizer.cpp
+  cpp/src/knife/common.cpp
+  cpp/src/knife/retrieval/recognizer.cpp
+  cpp/src/knife/traditional/recognizer.cpp
   cpp/src/logging.cpp
   cpp/src/main.cpp
   cpp/src/models.cpp
   cpp/src/onnx.cpp
   cpp/src/runtime.cpp
+  cpp/src/safe_obstacle.cpp
   cpp/src/scheduler.cpp
   cpp/src/state.cpp
   cpp/src/types.cpp
   cpp/src/web.cpp)
+if(INSIGHT_CUP_HAS_ROS2)
+  list(APPEND INSIGHT_CUP_SOURCES
+    cpp/src/insight_topic.cpp
+    cpp/src/safe_topic.cpp
+    cpp/src/motion_hold.cpp)
+endif()
 if(INSIGHT_CUP_HAS_RKNN)
   list(APPEND INSIGHT_CUP_SOURCES cpp/src/rknn.cpp)
 endif()
@@ -152,12 +183,14 @@ target_compile_definitions(insight-cup PRIVATE
   INSIGHT_CUP_PROJECT_ROOT="${CMAKE_SOURCE_DIR}"
   INSIGHT_CUP_HAS_REALSENSE=${INSIGHT_CUP_HAS_REALSENSE}
   INSIGHT_CUP_HAS_RKNN=${INSIGHT_CUP_HAS_RKNN}
+  INSIGHT_CUP_HAS_ROS2=${INSIGHT_CUP_HAS_ROS2}
+  INSIGHT_CUP_HAS_MOTION_HOLD=${INSIGHT_CUP_HAS_MOTION_HOLD}
   CPPHTTPLIB_OPENSSL_SUPPORT
   CPPHTTPLIB_ZLIB_SUPPORT
   CPPHTTPLIB_BROTLI_SUPPORT)
 target_compile_options(insight-cup PRIVATE -Wall -Wextra -Wpedantic)
 
-target_link_libraries(insight-cup PRIVATE
+target_link_libraries(insight-cup
   onnxruntime
   cpp_httplib
   nlohmann_json::nlohmann_json
@@ -170,11 +203,69 @@ target_link_libraries(insight-cup PRIVATE
   "${BROTLI_ENC_LIBRARY}"
   "${BROTLI_COMMON_LIBRARY}")
 
+if(INSIGHT_CUP_HAS_ROS2)
+  ament_target_dependencies(insight-cup rclcpp std_msgs)
+  if(INSIGHT_CUP_HAS_MOTION_HOLD)
+    ament_target_dependencies(insight-cup mission_control_interfaces)
+  endif()
+endif()
+
 if(INSIGHT_CUP_HAS_REALSENSE)
-  target_link_libraries(insight-cup PRIVATE realsense2::realsense2)
+  target_link_libraries(insight-cup realsense2::realsense2)
 endif()
 if(INSIGHT_CUP_HAS_RKNN)
-  target_link_libraries(insight-cup PRIVATE rknn_runtime)
+  target_link_libraries(insight-cup rknn_runtime)
+endif()
+
+if(INSIGHT_CUP_HAS_REALSENSE)
+  add_library(insight_cup_stereo_range STATIC cpp/src/stereo_range.cpp)
+  target_include_directories(insight_cup_stereo_range PUBLIC cpp/include)
+  target_compile_options(insight_cup_stereo_range PRIVATE
+    -Wall -Wextra -Wpedantic)
+  target_link_libraries(insight_cup_stereo_range PUBLIC
+    realsense2::realsense2 ${OpenCV_LIBS})
+
+  set(INSIGHT_CUP_YOLO_PREVIEW_SOURCES
+    tools/depth/yolo_stereo_range_preview.cpp
+    cpp/src/gallery.cpp
+    cpp/src/knife/classification/recognizer.cpp
+    cpp/src/knife/common.cpp
+    cpp/src/knife/retrieval/recognizer.cpp
+    cpp/src/knife/traditional/recognizer.cpp
+    cpp/src/logging.cpp
+    cpp/src/models.cpp
+    cpp/src/onnx.cpp
+    cpp/src/types.cpp)
+  if(INSIGHT_CUP_HAS_RKNN)
+    list(APPEND INSIGHT_CUP_YOLO_PREVIEW_SOURCES cpp/src/rknn.cpp)
+  endif()
+  add_executable(insight-cup-yolo-range-preview
+    ${INSIGHT_CUP_YOLO_PREVIEW_SOURCES})
+  target_include_directories(insight-cup-yolo-range-preview PRIVATE cpp/include)
+  target_compile_definitions(insight-cup-yolo-range-preview PRIVATE
+    INSIGHT_CUP_PROJECT_ROOT="${CMAKE_SOURCE_DIR}"
+    INSIGHT_CUP_HAS_RKNN=${INSIGHT_CUP_HAS_RKNN})
+  target_compile_options(insight-cup-yolo-range-preview PRIVATE
+    -Wall -Wextra -Wpedantic)
+  target_link_libraries(insight-cup-yolo-range-preview PRIVATE
+    insight_cup_stereo_range
+    onnxruntime
+    nlohmann_json::nlohmann_json
+    ${OpenCV_LIBS}
+    Threads::Threads)
+  if(INSIGHT_CUP_HAS_RKNN)
+    target_link_libraries(insight-cup-yolo-range-preview PRIVATE rknn_runtime)
+  endif()
+  set_target_properties(insight-cup-yolo-range-preview PROPERTIES
+    BUILD_RPATH "${ONNXRUNTIME_ROOT}/lib;${INSIGHT_CUP_LOCAL_PACKAGE_ROOT}/opt/ros/humble/lib/${INSIGHT_CUP_DEBIAN_ARCH};${INSIGHT_CUP_LOCAL_PACKAGE_ROOT}/opt/ros/humble/lib;${RKNN_RUNTIME_ROOT}")
+
+  add_executable(insight-cup-stereo-range-test
+    tools/depth/stereo_range_test.cpp)
+  target_include_directories(insight-cup-stereo-range-test PRIVATE cpp/include)
+  target_compile_options(insight-cup-stereo-range-test PRIVATE
+    -Wall -Wextra -Wpedantic)
+  target_link_libraries(insight-cup-stereo-range-test PRIVATE
+    insight_cup_stereo_range)
 endif()
 
 set_target_properties(insight-cup PROPERTIES
@@ -184,4 +275,31 @@ set_target_properties(insight-cup PROPERTIES
 include(CTest)
 if(BUILD_TESTING)
   add_test(NAME insight_cup_help COMMAND insight-cup --help)
+  if(INSIGHT_CUP_HAS_REALSENSE)
+    add_executable(insight-cup-stereo-range-unit-test
+      tests/cpp/test_stereo_range.cpp)
+    target_include_directories(insight-cup-stereo-range-unit-test PRIVATE
+      cpp/include)
+    target_compile_options(insight-cup-stereo-range-unit-test PRIVATE
+      -Wall -Wextra -Wpedantic)
+    target_link_libraries(insight-cup-stereo-range-unit-test PRIVATE
+      insight_cup_stereo_range)
+    add_test(NAME insight_cup_stereo_range
+      COMMAND insight-cup-stereo-range-unit-test)
+  endif()
+  add_executable(insight-cup-safe-obstacle-unit-test
+    tests/cpp/test_safe_obstacle.cpp
+    cpp/src/config.cpp
+    cpp/src/logging.cpp
+    cpp/src/safe_obstacle.cpp)
+  target_include_directories(insight-cup-safe-obstacle-unit-test PRIVATE
+    cpp/include)
+  target_compile_definitions(insight-cup-safe-obstacle-unit-test PRIVATE
+    INSIGHT_CUP_PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
+  target_compile_options(insight-cup-safe-obstacle-unit-test PRIVATE
+    -Wall -Wextra -Wpedantic)
+  target_link_libraries(insight-cup-safe-obstacle-unit-test PRIVATE
+    nlohmann_json::nlohmann_json ${OpenCV_LIBS} Threads::Threads)
+  add_test(NAME insight_cup_safe_obstacle
+    COMMAND insight-cup-safe-obstacle-unit-test)
 endif()

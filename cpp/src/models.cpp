@@ -3,11 +3,9 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
-#include <fstream>
 #include <iomanip>
 #include <limits>
 #include <map>
-#include <numeric>
 #include <regex>
 #include <set>
 #include <sstream>
@@ -17,6 +15,7 @@
 #include <opencv2/dnn.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "insight_cup/knife/backend.hpp"
 #include "insight_cup/onnx.hpp"
 #if INSIGHT_CUP_HAS_RKNN
 #include "insight_cup/rknn.hpp"
@@ -182,43 +181,6 @@ cv::Mat rotateExpanded(const cv::Mat& image, float degrees) {
   cv::warpAffine(image, rotated, matrix, cv::Size(outputWidth, outputHeight),
                  cv::INTER_LINEAR, cv::BORDER_REPLICATE);
   return rotated;
-}
-
-std::vector<std::string> loadKnifeLabels(const fs::path& path) {
-  std::ifstream input(path);
-  if (!input) {
-    throw std::runtime_error("Knife labels not found: " + path.string());
-  }
-  std::map<int, std::string> indexed;
-  std::string line;
-  while (std::getline(input, line)) {
-    if (line.empty()) {
-      continue;
-    }
-    std::istringstream parser(line);
-    int index = -1;
-    std::string label;
-    parser >> index >> label;
-    if (index < 0 || label.empty()) {
-      throw std::runtime_error("Invalid knife label line: " + line);
-    }
-    indexed[index] = label;
-  }
-  std::vector<std::string> labels(indexed.size());
-  for (std::size_t index = 0; index < labels.size(); ++index) {
-    const auto found = indexed.find(static_cast<int>(index));
-    if (found == indexed.end()) {
-      throw std::runtime_error("Knife labels must be contiguous from zero");
-    }
-    labels[index] = found->second;
-  }
-  for (int index = 1; index <= 10; ++index) {
-    if (labels.size() < static_cast<std::size_t>(index) ||
-        labels[index - 1] != "k" + std::to_string(index)) {
-      throw std::runtime_error("The first ten knife labels must be k1...k10");
-    }
-  }
-  return labels;
 }
 
 std::unique_ptr<InferenceSession> createInferenceSession(
@@ -797,168 +759,27 @@ json FaceRecognizer::metadata() const {
 }
 
 KnifeRecognizer::KnifeRecognizer(const RuntimeConfig& config)
-    : mode_(config.knifeMode), cpuThreads_(config.knifeCpuThreads) {
-  labels_.reserve(10);
-  for (int index = 1; index <= 10; ++index) {
-    labels_.push_back("k" + std::to_string(index));
-  }
-  if (mode_ == "classification") {
-    modelPath_ = config.knifeModelDir / "inference.onnx";
-    labels_ = loadKnifeLabels(config.knifeModelDir / "labels.txt");
-    threshold_ = config.knifeThreshold;
-    minMargin_ = config.knifeMinMargin;
-  } else {
-    modelPath_ = config.knifeRetrievalModel;
-    galleryPath_ = config.knifeGallery;
-    gallery_ = std::make_unique<FeatureGallery>(galleryPath_);
-    if (gallery_->dimensions() != 512) {
-      throw std::runtime_error("Knife gallery must contain 512-dimensional embeddings");
-    }
-    threshold_ = config.knifeRetrievalThreshold;
-    minMargin_ = config.knifeRetrievalMinMargin;
-  }
-  const fs::path rknnPath = mode_ == "classification"
-                                ? config.rknnModelDir / "knife_pplcnetv2.rknn"
-                                : fs::path();
-  session_ = createInferenceSession(modelPath_, rknnPath, config.provider,
-                                    cpuThreads_, 2);
-  modelPath_ = session_->modelPath();
-}
+    : backend_(createKnifeBackend(config)) {}
 
-std::vector<float> KnifeRecognizer::prepare(const cv::Mat& crop) const {
-  if (crop.empty() || crop.type() != CV_8UC3) {
-    throw std::runtime_error("Knife input must be a non-empty BGR image");
-  }
-  cv::Mat square = crop;
-  if (crop.rows != crop.cols) {
-    square = squareContextCrop(crop, Box{0, 0, crop.cols, crop.rows}, 1.0F);
-  }
-  cv::Mat resized;
-  cv::resize(square, resized, cv::Size(224, 224), 0.0, 0.0, cv::INTER_LINEAR);
-  cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
-  resized.convertTo(resized, CV_32FC3, 1.0 / 255.0);
-  const std::array<float, 3> means = {0.485F, 0.456F, 0.406F};
-  const std::array<float, 3> standardDeviations = {0.229F, 0.224F, 0.225F};
-  std::vector<cv::Mat> channels;
-  cv::split(resized, channels);
-  std::vector<float> output(3 * 224 * 224);
-  const std::size_t plane = 224 * 224;
-  for (std::size_t channel = 0; channel < channels.size(); ++channel) {
-    channels[channel] = (channels[channel] - means[channel]) /
-                        standardDeviations[channel];
-    if (!channels[channel].isContinuous()) {
-      channels[channel] = channels[channel].clone();
-    }
-    std::copy(channels[channel].ptr<float>(),
-              channels[channel].ptr<float>() + plane,
-              output.begin() + channel * plane);
-  }
-  return output;
-}
+KnifeRecognizer::~KnifeRecognizer() = default;
 
 Stage2Decision KnifeRecognizer::recognize(const cv::Mat& crop) const {
-  std::vector<float> input = prepare(crop);
-  const auto outputs = session_->run(input, {1, 3, 224, 224});
-  if (outputs.size() != 1) {
-    throw std::runtime_error("Knife model must return one output");
-  }
-
-  GalleryMatch match;
-  std::string scoreKind;
-  if (mode_ == "classification") {
-    if (outputs[0].data.size() != labels_.size()) {
-      throw std::runtime_error("Knife classifier output does not match labels");
-    }
-    float sum = 0.0F;
-    for (std::size_t index = 0; index < labels_.size(); ++index) {
-      const float score = outputs[0].data[index];
-      if (!std::isfinite(score) || score < -1e-5F) {
-        throw std::runtime_error("Knife classifier produced invalid probabilities");
-      }
-      sum += score;
-      match.classScores[labels_[index]] = score;
-    }
-    if (std::abs(sum - 1.0F) > 1e-3F) {
-      throw std::runtime_error("Knife classifier output is not softmax-normalized");
-    }
-    std::vector<std::size_t> indexes(labels_.size());
-    std::iota(indexes.begin(), indexes.end(), 0);
-    std::partial_sort(indexes.begin(), indexes.begin() + std::min<std::size_t>(2, indexes.size()),
-                      indexes.end(), [&](std::size_t left, std::size_t right) {
-                        return outputs[0].data[left] > outputs[0].data[right];
-                      });
-    match.candidateClass = labels_[indexes[0]];
-    match.score = outputs[0].data[indexes[0]];
-    if (indexes.size() > 1) {
-      match.secondBestClass = labels_[indexes[1]];
-      match.secondBestScore = outputs[0].data[indexes[1]];
-      match.margin = match.score - match.secondBestScore;
-    }
-    if (match.candidateClass == "other" || match.score < threshold_) {
-      match.status = "unknown";
-    } else if (!match.secondBestClass.empty() && match.margin < minMargin_) {
-      match.status = "ambiguous";
-    } else {
-      match.status = "matched";
-      match.predictedClass = match.candidateClass;
-    }
-    scoreKind = "softmax_confidence";
-  } else {
-    std::vector<float> embedding = outputs[0].data;
-    if (embedding.size() != gallery_->dimensions()) {
-      throw std::runtime_error("Knife retrieval embedding dimension mismatch");
-    }
-    l2Normalize(embedding);
-    match = gallery_->matchByIdentityMax(embedding, threshold_, minMargin_);
-    scoreKind = "cosine_similarity";
-  }
-
-  Stage2Decision decision;
-  decision.module = "knife";
-  decision.status = match.status;
-  if (!match.predictedClass.empty()) {
-    decision.predictedClass = match.predictedClass;
-  }
-  decision.candidateClass = match.candidateClass;
-  decision.score = match.score;
-  decision.scoreKind = scoreKind;
-  if (!match.secondBestClass.empty()) {
-    decision.secondBestClass = match.secondBestClass;
-    decision.secondBestScore = match.secondBestScore;
-    decision.margin = match.margin;
-  }
-  decision.classScores = match.classScores;
-  return decision;
+  return backend_->recognize(crop);
 }
 
 json KnifeRecognizer::metadata() const {
-  json result = {
-      {"backend", mode_ == "classification"
-                      ? "paddleclas_cpp_" + session_->backend()
-                      : "paddleclas_ppshitu_v2_cpp_" + session_->backend()},
-      {"upstream_commit", "f1233c18455b8acde4fc42ab0bea575fa06daa8e"},
-      {"model_path", modelPath_.string()},
-      {"mode", mode_},
-      {"labels", labels_},
-      {"device", session_->device()},
-      {"input_size", {224, 224}},
-      {"threshold", threshold_},
-      {"min_margin", minMargin_},
-      {"cpu_threads", cpuThreads_},
-  };
-  if (mode_ == "classification") {
-    result["architecture"] = "PPLCNetV2_base";
-    result["score_kind"] = "softmax_confidence";
-  } else {
-    result["architecture"] = "GeneralRecognitionV2_PPLCNetV2_base";
-    result["gallery"] = galleryPath_.string();
-    result["gallery_references"] = gallery_->rows();
-    result["embedding_size"] = gallery_->dimensions();
-    result["index_method"] = "exact_inner_product_cpp";
-    result["distance"] = "cosine_similarity";
-  }
-  return result;
+  return backend_->metadata();
 }
+
+const std::string& KnifeRecognizer::mode() const { return backend_->mode(); }
+
+std::size_t KnifeRecognizer::classCount() const {
+  return backend_->classCount();
+}
+
+float KnifeRecognizer::threshold() const { return backend_->threshold(); }
+
+float KnifeRecognizer::minMargin() const { return backend_->minMargin(); }
 
 RecognitionRouter::RecognitionRouter(std::shared_ptr<FaceRecognizer> face,
                                      std::shared_ptr<KnifeRecognizer> knife,

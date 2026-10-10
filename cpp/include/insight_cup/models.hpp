@@ -17,6 +17,8 @@
 
 namespace insight_cup {
 
+class KnifeRecognitionBackend;
+
 class YoloDetector {
  public:
   explicit YoloDetector(const RuntimeConfig& config);
@@ -93,26 +95,17 @@ class FaceRecognizer {
 class KnifeRecognizer {
  public:
   explicit KnifeRecognizer(const RuntimeConfig& config);
+  ~KnifeRecognizer();
 
   Stage2Decision recognize(const cv::Mat& crop) const;
   json metadata() const;
-  const std::string& mode() const { return mode_; }
-  std::size_t classCount() const { return labels_.size(); }
-  float threshold() const { return threshold_; }
-  float minMargin() const { return minMargin_; }
+  const std::string& mode() const;
+  std::size_t classCount() const;
+  float threshold() const;
+  float minMargin() const;
 
  private:
-  std::vector<float> prepare(const cv::Mat& crop) const;
-
-  std::string mode_;
-  fs::path modelPath_;
-  fs::path galleryPath_;
-  std::unique_ptr<InferenceSession> session_;
-  std::unique_ptr<FeatureGallery> gallery_;
-  std::vector<std::string> labels_;
-  float threshold_ = 0.50F;
-  float minMargin_ = 0.15F;
-  int cpuThreads_ = 1;
+  std::unique_ptr<KnifeRecognitionBackend> backend_;
 };
 
 class RecognitionRouter {

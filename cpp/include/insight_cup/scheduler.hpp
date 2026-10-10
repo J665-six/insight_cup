@@ -37,6 +37,12 @@ class AsyncStage2Scheduler {
       const std::vector<DetectedRegion>& regions,
       const RecognizeFunction& recognize,
       const std::vector<PrepareJob>& prepareJobs);
+  // Refresh and tracking settings are expressed against the historical
+  // 30-FPS reference. The source rate is set once the capture is opened so
+  // those settings preserve the same wall-clock behavior at 15 FPS.
+  void setFrameRate(double frameRate);
+  int refreshFrames() const;
+  int stableRefreshFrames() const;
   bool waitForIdle(std::chrono::milliseconds timeout);
   std::vector<FinalStage2Result> finalizeResults();
   void close();

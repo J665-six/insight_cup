@@ -8,11 +8,9 @@ RealSense D455 RGB / Video / Image
           v
   YOLO detector (fN/kN/b0)
           |
-          | Stage1Detection
-          | id + major_class + confidence + bbox_xyxy + crop
-          | raw fN/kN is excluded
+          | f/k track needs two YOLO confirmations by default
           v
-       Router
+  Stage2 scheduler + Router
        /  |  \
       /   |   \
     b0    f    k
@@ -22,27 +20,30 @@ RealSense D455 RGB / Video / Image
      |    +-------> InsightFace ------> f1...f10 / unknown / ambiguous / no_face
      +------------> passthrough
           |
-          v
-terminal log + events.jsonl + annotated frame + debug UI
+          +--> terminal log + events.jsonl + annotated frame + debug UI
 ```
 
 正式运行时为单个 C++17 进程。实时模式默认以 librealsense2 C++ API 打开 Intel
-RealSense D455 的彩色流，并可通过
-`--realsense-serial` 固定设备。该路径不依赖 `/dev/videoN` 编号。当前阶段仅使用
-D455 的 RGB 图像；深度帧尚未进入 YOLO 或两个二阶段识别模块。普通 UVC 摄像头
-仍可通过 `--source 0` 等 OpenCV 设备编号显式启用。
+RealSense D455 的彩色流，并可通过 `--realsense-serial` 固定设备。正式识别链路只把
+彩色图像送入 YOLO 和二阶段识别。D455 双目测距由单独工具打开彩色和深度流。
+默认共享相机输出为 `1280x720@15 FPS`，以适配车辆运行时的相机帧率。
+普通 UVC 摄像头仍可通过 `--source 0` 等 OpenCV 设备编号显式启用。
 
 实时相机源中，YOLO 与画面发布运行在主循环，人脸和刀具识别默认各使用两个后台
 worker。YOLO 原始 `fN/kN` 合并为大类后会再次执行同大类 NMS，避免原始分类别
 NMS 留下同一物体的重叠框。调度器随后对整帧目标统一分配轨迹，匹配评分综合运动
 预测位置、上一位置、框尺寸和中心距离；一条旧轨迹在同一帧只能分给一个框。稳定
-前默认每 15 帧刷新，身份确认后每 30 帧刷新，新目标立即进入对应 worker。因此
+前以 30 FPS 为参考默认每 15 帧刷新，身份确认后每 30 帧刷新；运行时会按实际源帧率
+换算为相同的时间间隔，15 FPS 时约为 8 帧和 15 帧，新目标立即进入对应 worker。因此
 耗时较高的 SCRFD/ArcFace 不会阻塞相机画面，静止且已确认的目标也不会无意义地
 高频重复推理。调试 UI 使用 `/api/stream.mjpg` 持续推送最新帧，慢客户端自动跳到
 最新画面。
 视频源也使用同一套异步调度；视频结束时等待后台任务并补写未消费的结果。图片源
 保持同步调度，便于逐张检查完整识别结果。普通视频默认按源 FPS 节流；显式使用
 `--unthrottled-video` 才会尽可能快地批处理。
+
+车辆实时源和视频源中，默认要求同一 `f/k` 轨迹连续两次被 YOLO 检出后才提交二阶段，
+以减少短暂误检触发的细分识别；图片源保留单帧直通。二阶段身份还需通过现有时序确认。
 
 为避免 OpenCV 和多个 ONNX Runtime 会话同时开满全部 CPU，实时进程将 OpenCV
 限制为 4 线程；YOLO、人脸及刀具会话分别显式设置线程数、顺序执行并关闭空闲自旋。
@@ -108,6 +109,26 @@ Stage1Detection
 - `debug`：与正式交接隔离的 YOLO 原始小类
 
 ## 会话产物
+
+实时运行会将稳定的 `fN/kN` 标签快照发布到 `/vision`（`std_msgs/msg/String`），保持原有
+调试接口格式。最终综合状态发布到 `/insight`
+（`std_msgs/msg/String`），格式为 JSON，包含 `timestamp_ms`、`obstacle_detected`、
+`obstacle_distance_cm`、`target_detected` 和 `targets`。障碍物状态持续更新；人物和刀具
+只有二阶段稳定后才在一次消息中写入 `targets`，后续消息的 `target_detected` 为 `false`。
+`cup_car_serial` 应消费最终 `/insight` 中的 `targets` 数组，按人物优先顺序播报。
+
+前方障碍物由 `SafeObstacleMonitor` 处理，并发布到 `/safe`
+（`std_msgs/msg/String`）。它读取 distance 工具保存的多边形标定，使用 ID 1 的 `#1A`
+多边形作为障碍物 ROI，将 ID 2 到 6 的标定中心映射到 20、40、60、80、100 cm；ID 7 的
+`#7A` 是人物和刀具 YOLO ROI。YOLO 障碍物框中心
+必须在该 ROI 内并连续稳定 2 秒，消息中的 `obstacle` 才为 `true`；消息同时包含
+`distance_cm`、`distance_m`、稳定时长、置信度和框坐标。
+
+人物和刀具的 YOLO 使用 distance 工具记录中的 `#7A` 多边形作为输入 ROI。只有检测框面积
+（检测框宽度乘高度）接近 `#1..#4` 四个标定框面积的平均值时，检测才进入二阶段；默认相对容差为 30%。二阶段
+结果经过已有的时间平滑后才进入 `/vision`，稳定完成后才写入 `/insight`。达到人物或刀具
+面积底线时，运行时请求 `/navigation_mission/set_motion_hold` 的 `inspection` 保持源，
+服务成功后才执行二阶段；最终事件发布后请求释放保持。
 
 每次启动创建独立目录：
 

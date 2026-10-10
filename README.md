@@ -13,9 +13,11 @@ NumPy、Faiss 或 pyrealsense2。首次构建：
 ./build_cpp.sh
 ```
 
-构建依赖为 CMake、G++、OpenCV C++、librealsense2、OpenSSL、zlib、Brotli 和
-RKNN Runtime。RK3588 上默认加载 RKNN Runtime `2.3.2`；ONNX Runtime `1.23.2`
-仅作为 CPU 回退。`start.sh` 在可执行文件不存在时会自动构建，之后只做增量编译。
+构建依赖为 CMake、G++、ROS 2 Humble（`rclcpp`、`std_msgs`）、OpenCV C++、
+librealsense2、OpenSSL、zlib、Brotli 和 RKNN Runtime。构建脚本通过 CMake 前缀查找
+ROS 包，不需要从 `.bashrc` 加载环境。RK3588 上默认加载 RKNN
+Runtime `2.3.2`；ONNX Runtime `1.23.2` 仅作为 CPU 回退。`start.sh` 在可执行文件
+不存在时会自动构建，之后只做增量编译。
 
 `--provider auto` 是默认值：RKNN 模型齐全时自动使用 NPU。需要强制检查 NPU 或
 进行 CPU 对照时分别使用：
@@ -67,9 +69,129 @@ profile 约束同时在 `start.sh` 和 C++ 配置中生效，并写入 session m
 ./start.sh --realsense-serial 038122250473
 ```
 
-实时识别使用 D455 的 `1280x720@30 FPS` BGR 彩色流。设备由
-librealsense2 C++ API 按序列号选择，不依赖可能变化的 `/dev/videoN`。D455 的深度帧
-当前不参与 YOLO、人脸或刀具识别。
+实时识别主程序使用 D455 的 `1280x720@15 FPS` BGR 彩色流。设备由 librealsense2
+C++ API 按序列号选择，不依赖可能变化的 `/dev/videoN`。YOLO、人脸和刀具只处理彩色
+图像；独立的 `distance` 测距工具另外请求 D455 原始深度 `848x480`，再对齐到彩色图像
+后测量框内距离。
+
+识别调试结果会发布到 ROS 2 话题 `/vision`，类型为 `std_msgs/msg/String`，内容保持原来的
+稳定标签格式，例如 `f5,k3`，空字符串表示当前没有稳定目标。最终综合状态发布到 `/insight`，类型为
+`std_msgs/msg/String`，内容是格式化 JSON：
+
+```json
+{
+  "timestamp_ms": 1234567890,
+  "obstacle_detected": true,
+  "obstacle_distance_cm": 40,
+  "target_detected": true,
+  "targets": ["f5", "k3"]
+}
+```
+
+障碍物状态会持续更新；人物和刀具只有第二阶段连续稳定后才在一次消息中写入，后续 `/insight` 消息的
+`target_detected` 为 `false`。`f1…f10` 表示人物，`k1…k10` 表示刀具。`cup_car_serial` 节点
+应订阅最终 `/insight` 并读取 `targets` 数组，
+并在新的有效 `/cup_car_serial/rfid_number` 事件到来时，把“到达巡逻点”和尚未播报的
+目标合并为 `TTS,<GBK文本>\r\n` 写入串口；播报顺序是人物在前、刀具在后。类别需连续
+5 帧消失后才解除重复抑制。单条下位机 TTS 文本上限为 91 个 GBK 字节，超出部分会在
+后续有效 RFID 事件时继续播报。`/cup_car_serial/rfid_number` 仍是读卡结果通知，不是
+TTS 请求话题。
+
+当人物或刀具第一阶段框达到面积底线时，识别链路会请求
+`/navigation_mission/set_motion_hold`，请求源为 `inspection`。服务返回成功后才进入第二阶段；
+第二阶段稳定结果写入 `/insight` 后请求释放保持。若构建环境没有
+`mission_control_interfaces`，构建会明确提示停车服务未启用，程序只适合调试，不能当作已经
+让车辆停车运行。
+
+本地不连接小车时，可以启动假服务验证停车/继续流程。先构建接口包（本机 Python 打包环境
+需要关闭用户 site 以避开 setuptools 版本冲突）：
+
+```bash
+cd /home/j/Public-Safety-Event-
+PYTHONNOUSERSITE=1 colcon build --packages-select mission_control_interfaces --symlink-install
+```
+
+在终端 A 启动假服务：
+
+```bash
+source /opt/ros/humble/setup.bash
+source /home/j/Public-Safety-Event-/install/setup.bash
+python3 /home/j/insight_cup/tools/ros/fake_motion_hold_server.py --json-log
+```
+
+假服务监听真实使用的服务名，但只记录状态，不控制电机。终端 B 使用同样的两个 `source`
+后启动识别程序。假服务会显示每一次请求：
+
+```text
+FAKE_HOLD {"request_id":1,"source":"inspection","hold":true,
+"success":true,"motion_held":true,"active_sources":["inspection"]}
+FAKE_HOLD {"request_id":2,"source":"inspection","hold":false,
+"success":true,"motion_held":false,"active_sources":[]}
+```
+
+也可以用下面的参数测试异常路径：
+
+```bash
+python3 tools/ros/fake_motion_hold_server.py --delay-ms 300
+python3 tools/ros/fake_motion_hold_server.py --reject-hold
+python3 tools/ros/fake_motion_hold_server.py --reject-release
+```
+
+前方障碍物安全状态会发布到 ROS 2 话题 `/safe`，类型为 `std_msgs/msg/String`，消息是
+缩进后的 JSON 字符串。直接执行 `ros2 topic echo /safe` 就会按多行显示，不需要额外使用
+`jq`；下游程序仍可读取 `data` 字段并解析其中的 JSON。例如：
+
+```json
+{"obstacle":true,"status":"obstacle","distance_cm":40,"distance_m":0.4,
+ "stable_seconds":2.13,"stable_frames":33,"confidence":0.71,
+ "bbox_xyxy":[530,410,750,650]}
+```
+
+安全模块读取 `distance` 保存的 `insight.distance_boxes.v1` 标定文件，把已有障碍物标定中的 ID 1 的
+`#1A` 多边形作为前方障碍物 ROI；当前精度标定同时读取
+`outputs/distance/obstacle_horizontal.json` 和 `obstacle_vertical.json`。横向和纵向样本分别按
+100、80、60、40、20 cm 分组，对每组的 `sqrt(宽×高)` 求平均，再对实时 YOLO 框做分段线性插值。
+框的宽高比自动选择横向或纵向曲线，结果按 5 cm 量化并限制在 20 到 100 cm。`#7A` 是人物和刀具
+YOLO ROI，不参与障碍物距离计算。障碍物框中心必须落在 `#1A` ROI 内，连续稳定 2 秒后
+`obstacle` 才变成 `true`。没有障碍物时仍发布
+`{"obstacle":false,"status":"clear"}`，便于下游及时解除安全状态。
+
+默认启动时会自动读取上述两份横向/纵向像素标定，并从
+`outputs/distance/obstacle_distance.json`（找不到时尝试 `obstacle_distance_new.json`）读取
+`#1A` ROI。旧的单文件 `distance_*.json` 仍可通过 `--safe-zone-config` 兼容读取，但会使用
+旧的参考区域算法；像素精度测距应保留这两份新标定文件。若需要固定某次旧格式标定，可以使用：
+
+```bash
+./start.sh --safe-zone-config outputs/distance/distance_YYYYMMDD_HHMMSS.json
+```
+
+这里的文件必须包含 `#1A` 和 `#2A` 到 `#6A` 共六个多边形；示例文件名只是占位符，
+请替换成实际完成六区域标定的记录。
+
+稳定时间和置信度可调：
+
+```bash
+./start.sh --safe-stable-seconds 2 --safe-confidence 0.30
+./start.sh --no-safe
+```
+
+人物和刀具的第一阶段 YOLO 默认读取最新的 `distance_*.json` 标定记录，把图中的 `#7A`
+多边形作为识别 ROI。记录中的 `#1`、`#2`、`#3`、`#4` 面积为 `8301`、`12129`、`7335`、
+`9926 px²`，参考平均值为 `9422.75 px²`。YOLO 框面积进入平均值上下 30% 的范围后，才会
+送入人脸或刀具二阶段。这里的 YOLO 框面积按检测框 `宽 × 高` 计算；二阶段的稳定结果继续
+通过 `/insight` 发送给 RFID 播报链路。原 `/insight` 的逗号标签格式已移动到 `/vision` 调试接口。
+
+相关参数：
+
+```bash
+./start.sh --stage1-roi-config outputs/distance/distance_YYYYMMDD_HHMMSS.json
+./start.sh --stage2-area-tolerance 0.30
+./start.sh --no-stage1-roi
+```
+
+`--no-stage1-roi` 用于临时恢复全画面识别。默认配置文件是
+`outputs/distance/stage1_roi.json`；该文件不存在时，会自动从 `outputs/distance/` 选择最新
+且包含 `#7A` 与 `#1..#4` 的距离记录。UI 预览会用绿色轮廓显示当前 `#7A` ROI。
 
 使用已录制视频：
 
@@ -86,11 +208,93 @@ librealsense2 C++ API 按序列号选择，不依赖可能变化的 `/dev/videoN
 `./start.sh --profile ui-recording --no-open-browser`。离线任务需要在视频结束后自动关闭
 UI 服务时，再添加 `--exit-on-complete`。
 
+## D455 深度测距与区域工具
+
+### 手动区域记录工具
+
+如果要连续记录多个自定义区域的像素大小和距离，可以直接运行项目根目录的 `distance`：
+
+```bash
+./distance
+```
+
+默认请求识别链路一致的彩色 `1280x720@15 FPS`，以及 D455 原始深度 `848x480@15 FPS`；
+深度帧对齐到彩色后，区域和像素统计使用 `1280x720` 坐标。启动后窗口右侧侧栏会显示
+原始深度尺寸、对齐尺寸、每个区域的包围盒坐标、宽高、像素面积、`Z` 深度和三维距离 `R`，
+并实时刷新当前平均值。现在使用鼠标右键逐点绘制区域，每两个点自动用直线连接；再次右键
+点击起点（起点附近的 10 个像素内也可闭合）结束当前区域。绘制过程中按鼠标左键撤销最后
+一个点，画面会实时显示点、连线和待闭合提示。区域闭合后，左键点击区域或侧栏行选中；点击
+侧栏的 `x1/y1/x2/y2/W/H` 单元格后直接输入数字并按 Enter，会按新的包围盒比例同步调整
+多边形，像素面积和距离重新计算。点击 `CONFIRM AVERAGE`（或按 Enter）才确认并锁定当前
+平均值；点击 `x`/`Delete` 删除选中区域及其数据，`u` 撤销最后一个点或最后一个区域，`c`
+清空，`s` 保存，`q` 保存并退出。
+
+结果默认保存到 `outputs/distance/distance_TIMESTAMP.json`，也可以指定路径：
+
+```bash
+./distance --serial 038122250473 --output /tmp/my_distance.json
+```
+
+仅修改彩色相机分辨率时需要同时指定 `--width` 和 `--height`；深度流仍固定请求
+`848x480`，并在对齐后使用彩色尺寸。脚本启动时会读取实际 profile，并把实际彩色、原始
+深度和对齐深度尺寸写入 JSON；如果相机没有提供请求的彩色尺寸会直接报错。无效深度不会
+参与距离平均值，但对应框仍会保留在像素尺寸统计中。
+
+### YOLO 稳定框 + 距离预览
+
+要直接看“YOLO 稳定框 + 距离”效果，运行下面这个预览程序。它复用项目 C++ YOLO 模型，
+只运行第一阶段检测和双目测距，不启动人脸/刀具细分识别：
+
+```bash
+./build/insight-cup-yolo-range-preview
+```
+
+`f/k` 目标框连续确认两次后显示细分类标签、三维直线距离 `R` 和镜头方向深度 `Z`；
+`b0` 是第一阶段直接输出的类别，首次检测即可显示距离。灰色的 `confirming` 框尚未参与
+测距。按 `q` 退出。若运行在 RK3588 且使用 NPU，可加
+`--provider rknn`；没有 NPU 时使用 `--provider cpu`。多台相机可加 `--serial SERIAL`。
+可以用 `--confirmations 3` 提高稳定确认次数，或用 `--conf 0.3` 调整 YOLO 置信度。
+
+这个画面直接把 D455 的对齐深度输入已稳定的 YOLO 框，显示效果与下面手动框选的独立
+测距程序共用同一个 `measureStereoRange` 模块。
+
+### 原始手动测距窗口
+
+构建后可以单独启动测距窗口，不加载识别模型：
+
+```bash
+./build/insight-cup-stereo-range-test
+```
+
+在彩色画面里用鼠标拖框圈住静止障碍物，终端会每秒输出约五条 JSON 测量结果；
+窗口标注的是到框中心的三维直线距离和光轴方向深度。按 `c` 清除框、重新圈选，按
+`q` 退出。它使用 D455 的左右红外双目深度流生成的 `Z16` 深度，经 librealsense 对齐到
+彩色图，再在识别框中央区域取深度中位数并按相机内参反投影。测距代码可通过
+`measureStereoRange` 接收识别模块每帧给出的框；测试窗口用手动框选提供同样的输入，便于
+先独立检查深度稳定性。
+
+如果已有识别框坐标（彩色图像像素坐标，右下角不包含在框内），可固定框运行：
+
+```bash
+./build/insight-cup-stereo-range-test \
+  --serial 038122250473 --bbox 500,200,700,600 --no-gui
+```
+
+不指定 `--serial` 时使用第一台 RealSense。若 RGB 分辨率不同于默认 `1280x720`，需同步
+指定 `--width` 和 `--height`。坐标系为相机坐标：`camera_x_m` 向右为正，`camera_y_m`
+向下为正，`depth_z_m` 沿镜头方向，`range_m` 是三维直线距离；框内有效深度不足时会返回
+`valid: false` 和原因，不会猜测距离。
+
+实现依据 librealsense 的 `Z16` 深度单位、RGB-D 对齐和校准内参反投影接口：
+[Z16 format](https://github.com/realsenseai/librealsense/blob/master/include/librealsense2/h/rs_sensor.h)、
+[align example](https://github.com/realsenseai/librealsense/blob/master/examples/align/rs-align.cpp)、
+[projection utilities](https://github.com/realsenseai/librealsense/blob/master/include/librealsense2/rsutil.h)。
+
 常用参数：
 
 ```bash
 ./start.sh --realsense-serial 038122250473
-./start.sh --source realsense --camera-width 1280 --camera-height 720 --camera-fps 30
+./start.sh --source realsense --camera-width 1280 --camera-height 720 --camera-fps 15
 ./start.sh --source 0 --vid-stride 2  # 显式使用普通 OpenCV 摄像头
 ./start.sh --source video.mp4 --max-frames 100
 ./start.sh --profile ui-recording --source image.jpg --port 7861
@@ -103,13 +307,17 @@ UI 服务时，再添加 `--exit-on-complete`。
 计数和最近识别事件。完整链路与事件字段见
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
 
+车辆实时源和视频源中，同一 `f/k` 目标需要连续两次 YOLO 检出后才进入第二阶段；
+图片源仍按单帧处理。人脸与刀具二阶段继续使用按轨迹隔离的时序平滑策略。
+
 实时相机模式下，UI 通过 MJPEG 连续接收最新标注帧，不再以单张 JPEG 低频轮询。
 YOLO 保持逐帧检测；较慢的人脸、刀具二阶段在独立后台线程运行，并依据大类和框
-位置关联短期结果。新目标会立即提交识别；未确认结果每 15 帧刷新，身份确认后改为
-每 30 帧刷新，减少静止画面中的重复计算，同时不延长首次确认时间：
+位置关联短期结果。新目标会立即提交识别；二阶段刷新参数以 30 FPS 为参考，运行时
+会按实际源帧率换算，15 FPS 时未确认结果约每 8 帧刷新、确认后约每 15 帧刷新，
+减少静止画面中的重复计算，同时不延长首次确认时间：
 
 ```bash
-./start.sh --stage2-refresh-frames 15 --stage2-stable-refresh-frames 30
+./start.sh --stage2-refresh-frames 15 --stage2-stable-refresh-frames 30  # 30 FPS reference
 ./start.sh --stage2-cache-iou 0.55 --stage2-workers 1
 ./start.sh --face-cpu-threads 1 --knife-cpu-threads 1
 ./start.sh --knife-min-area-ratio 0.0025  # 仅在标定后按需启用
@@ -246,7 +454,7 @@ insight_cup/
 | --- | --- | --- |
 | `start.sh` | 正式启动入口；检查桌面安全配置、按需增量构建，并选择比赛或 UI 录像线路 | 默认 `competition` 使用正常优先级；`ui-recording` 使用较低优先级并开启 UI 与标注录像；旧手工开关进入 `custom` 兼容线路 |
 | `build_cpp.sh` | 创建/更新 `build/` 并执行 CMake 构建 | 默认 `Release`、2 个并行任务；可用环境变量覆盖构建类型和并行数 |
-| `CMakeLists.txt` | 生成唯一的 C++17 可执行文件 `insight-cup` | 选择 x86_64/aarch64 本地依赖；RealSense 可选；RKNN 只在 ARM64 且 SDK 可用时编译 |
+| `CMakeLists.txt` | 生成唯一的 C++17 可执行文件 `insight-cup` | 选择 x86_64/aarch64 本地依赖；RealSense 可选；ROS 2 话题默认启用，可用 `INSIGHT_CUP_ENABLE_ROS2=OFF` 关闭；RKNN 只在 ARM64 且 SDK 可用时编译 |
 | `start_python.sh` | 启动旧 Python 全链路用于迁移结果对照 | 自动选择 `.venv`、限制线程；不是生产入口 |
 | `pyproject.toml` | 定义 `insight-cup` Python 包、依赖和 console script | Python 入口为 `insight_cup.app.cli:main`，也可通过 `python -m insight_cup` 调用 |
 | `requirements/runtime.txt` | Python 参考运行时依赖 | 包含 YOLO、ONNX Runtime、OpenCV 等，不影响已编译的 C++ 进程 |
@@ -261,6 +469,8 @@ insight_cup/
 | 模块 | 职责 |
 | --- | --- |
 | `main.cpp` | 组装配置、日志、共享状态、运行线程和 Web 服务；处理信号与进程退出 |
+| `insight_topic.hpp/.cpp` | 发布当前稳定的 `f/k` 类别快照到 ROS 2 `/insight` |
+| `safe_obstacle.hpp/.cpp`、`safe_topic.hpp/.cpp` | 读取 #1A/#2A…#6A 多边形标定，稳定 2 秒后发布前方障碍物距离到 ROS 2 `/safe` |
 | `config.hpp/.cpp` | 保存全部默认参数，解析 CLI，展开路径，执行参数校验，并把有效配置序列化到 manifest |
 | `types.hpp/.cpp` | 定义框、YOLO 调试信息、阶段一交接、阶段二原始决策、时序结果和最终结果等跨模块契约 |
 | `inference.hpp` | 定义统一的 `InferenceSession` 接口，让模型层不直接依赖具体 CPU/NPU 后端 |

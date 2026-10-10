@@ -8,27 +8,13 @@ BUILD_JOBS="${BUILD_JOBS:-2}"
 
 cd "$PROJECT_ROOT"
 
-# The affected RK3588 image can crash Xorg when NoMachine keeps its automatic
-# encoder/realtime defaults. Refuse to start in a graphical session until the
-# one-time root configuration has been applied.
-if [[ "${INSIGHT_CUP_SKIP_NOMACHINE_CHECK:-0}" != 1 &&
-      -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" &&
-      -x "$PROJECT_ROOT/tools/systemd/check-nomachine-safe.sh" ]]; then
-  "$PROJECT_ROOT/tools/systemd/check-nomachine-safe.sh" || {
-    printf 'Refusing to start while NoMachine is configured unsafely.\n' >&2
-    printf 'For a deliberate headless/diagnostic run, set INSIGHT_CUP_SKIP_NOMACHINE_CHECK=1.\n' >&2
-    exit 78
-  }
-fi
-
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
 export OMP_WAIT_POLICY="${OMP_WAIT_POLICY:-PASSIVE}"
 export KMP_BLOCKTIME="${KMP_BLOCKTIME:-0}"
 export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
 export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
 export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
-# Do not let OpenCV create a large second thread pool while NoMachine/GNOME is
-# encoding the desktop. Override explicitly for a headless benchmark.
+# Keep OpenCV's thread pool bounded unless explicitly overridden.
 export OPENCV_FOR_THREADS_NUM="${OPENCV_FOR_THREADS_NUM:-1}"
 export INSIGHT_CUP_OPENCV_THREADS="${INSIGHT_CUP_OPENCV_THREADS:-1}"
 

@@ -51,6 +51,12 @@ struct RuntimeConfig {
   float knifeMinBoxAreaRatio = 0.0F;
   float knifeRetrievalThreshold = 0.50F;
   float knifeRetrievalMinMargin = 0.02F;
+  fs::path knifeTraditionalTemplateDir =
+      fs::path(INSIGHT_CUP_PROJECT_ROOT) /
+      "data/knife_dataset/trainv5_grouped/images/train";
+  float knifeTraditionalThreshold = 0.30F;
+  float knifeTraditionalMinMargin = 0.0F;
+  int knifeTraditionalMaxTemplatesPerClass = 240;
   int knifeCpuThreads = 1;
 
   int stage2RefreshFrames = 15;
@@ -62,11 +68,31 @@ struct RuntimeConfig {
   std::string stage2Smoothing = "vote";
   int stage2SmoothingWindow = 3;
   int stage2SwitchConfirmations = 2;
+  int stage1Confirmations = 2;
+
+  // Stage-1 YOLO uses the explicit #1A polygon for obstacles and #7A for
+  // person/knife. Stage 2 uses separate calibrated rectangle-area floors for
+  // person and knife boxes (defined in runtime.cpp).
+  bool stage1RoiEnabled = true;
+  fs::path stage1RoiConfig = fs::path(INSIGHT_CUP_PROJECT_ROOT) /
+                             "outputs/distance/stage1_roi.json";
+  float stage2AreaTolerance = 0.30F;
+
+  // Obstacle safety monitor. It reads the polygon calibration saved by the
+  // distance tool and publishes a stable front obstacle state on /safe.
+  bool safeEnabled = true;
+  fs::path safeZoneConfig = fs::path(INSIGHT_CUP_PROJECT_ROOT) /
+                            "outputs/distance/obstacle_distance_new.json";
+  float safeStableSeconds = 2.0F;
+  float safeConfidence = 0.25F;
 
   std::optional<std::string> realsenseSerial;
   int cameraWidth = 1280;
   int cameraHeight = 720;
-  int cameraFps = 30;
+  // The D455 stream is shared with navigation. Keep the capture rate at the
+  // navigation-safe 15 FPS unless a deployment explicitly requests another
+  // rate.
+  int cameraFps = 15;
   int videoStride = 1;
   bool paceVideo = true;
   std::optional<int> maxFrames;

@@ -1,11 +1,13 @@
 #include "insight_cup/config.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_set>
+#include <vector>
 
 namespace insight_cup {
 
@@ -154,17 +156,26 @@ void RuntimeConfig::validate() const {
       throw std::runtime_error("Knife gallery not found: " +
                                displayPath(knifeGallery));
     }
+  } else if (knifeMode == "traditional") {
+    if (!fs::is_directory(knifeTraditionalTemplateDir)) {
+      throw std::runtime_error("Knife traditional template directory not found: " +
+                               displayPath(knifeTraditionalTemplateDir));
+    }
   } else {
-    throw std::runtime_error("Knife mode must be classification or retrieval");
+    throw std::runtime_error(
+        "Knife mode must be classification, retrieval, or traditional");
   }
   if (provider == "rknn") {
-    if (knifeMode != "classification") {
+    if (knifeMode == "retrieval") {
       throw std::runtime_error(
-          "RKNN currently supports knife classification mode only");
+          "RKNN currently supports knife classification or traditional mode only");
     }
-    for (const auto& filename : {"yolo_best.rknn", "scrfd_det_10g.rknn",
-                                 "arcface_w600k_r50.rknn",
-                                 "knife_pplcnetv2.rknn"}) {
+    std::vector<std::string> requiredRknn = {
+        "yolo_best.rknn", "scrfd_det_10g.rknn", "arcface_w600k_r50.rknn"};
+    if (knifeMode == "classification") {
+      requiredRknn.push_back("knife_pplcnetv2.rknn");
+    }
+    for (const auto& filename : requiredRknn) {
       if (!fs::is_regular_file(rknnModelDir / filename)) {
         throw std::runtime_error("RKNN model not found: " +
                                  displayPath(rknnModelDir / filename));
@@ -184,6 +195,10 @@ void RuntimeConfig::validate() const {
   requireRange("Knife retrieval threshold", knifeRetrievalThreshold, 0.0F,
                1.0F);
   requireRange("Knife retrieval margin", knifeRetrievalMinMargin, 0.0F, 1.0F);
+  requireRange("Knife traditional threshold", knifeTraditionalThreshold, 0.0F,
+               1.0F);
+  requireRange("Knife traditional margin", knifeTraditionalMinMargin, 0.0F,
+               1.0F);
   requireRange("Stage-2 cache IoU", stage2CacheIou, 0.0F, 1.0F, true);
   if (imageSize <= 0 || faceDetectionSize <= 0 || faceUpsampleMinSide < 0 ||
       yoloCpuThreads <= 0 || yoloFrameStride <= 0 ||
@@ -191,10 +206,15 @@ void RuntimeConfig::validate() const {
       knifeCpuThreads <= 0 || stage2RefreshFrames <= 0 ||
       stage2StableRefreshFrames < stage2RefreshFrames || stage2Workers <= 0 ||
       stage2SmoothingWindow <= 0 || stage2SwitchConfirmations <= 0 ||
+      stage1Confirmations <= 0 ||
+      stage2AreaTolerance < 0.0F || stage2AreaTolerance > 1.0F ||
+      safeStableSeconds <= 0.0F || safeConfidence < 0.0F ||
+      safeConfidence > 1.0F ||
       cameraWidth <= 0 || cameraHeight <= 0 || cameraFps <= 0 ||
       videoStride <= 0 || (maxFrames && *maxFrames <= 0) || port < 1 ||
       port > 65535 || jpegQuality < 1 || jpegQuality > 100 ||
-      previewWidth <= 0 || frameLogEvery <= 0) {
+      previewWidth <= 0 || frameLogEvery <= 0 ||
+      knifeTraditionalMaxTemplatesPerClass < 0) {
     throw std::runtime_error("One or more positive runtime settings are invalid");
   }
   if (faceRotationRetryDegrees < 0.0F || faceRotationRetryDegrees > 45.0F) {
@@ -242,6 +262,12 @@ json RuntimeConfig::toJson() const {
       {"knife_min_box_area_ratio", knifeMinBoxAreaRatio},
       {"knife_retrieval_threshold", knifeRetrievalThreshold},
       {"knife_retrieval_min_margin", knifeRetrievalMinMargin},
+      {"knife_traditional_template_dir",
+       displayPath(knifeTraditionalTemplateDir)},
+      {"knife_traditional_threshold", knifeTraditionalThreshold},
+      {"knife_traditional_min_margin", knifeTraditionalMinMargin},
+      {"knife_traditional_max_templates_per_class",
+       knifeTraditionalMaxTemplatesPerClass},
       {"knife_cpu_threads", knifeCpuThreads},
       {"stage2_refresh_frames", stage2RefreshFrames},
       {"stage2_stable_refresh_frames", stage2StableRefreshFrames},
@@ -250,6 +276,15 @@ json RuntimeConfig::toJson() const {
       {"stage2_smoothing", stage2Smoothing},
       {"stage2_smoothing_window", stage2SmoothingWindow},
       {"stage2_switch_confirmations", stage2SwitchConfirmations},
+      {"stage1_confirmations", stage1Confirmations},
+      {"stage1_roi_enabled", stage1RoiEnabled},
+      {"stage1_roi_config", displayPath(stage1RoiConfig)},
+      {"stage2_area_tolerance", stage2AreaTolerance},
+      {"safe_enabled", safeEnabled},
+      {"safe_zone_config", displayPath(safeZoneConfig)},
+      {"safe_stable_seconds", safeStableSeconds},
+      {"safe_confidence", safeConfidence},
+      {"temporal_reference_fps", 30.0},
       {"realsense_serial",
        realsenseSerial ? json(*realsenseSerial) : json(nullptr)},
       {"camera_width", cameraWidth},
@@ -368,6 +403,14 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
       config.knifeRetrievalThreshold = floatValue(option, next());
     } else if (option == "--knife-retrieval-min-margin") {
       config.knifeRetrievalMinMargin = floatValue(option, next());
+    } else if (option == "--knife-traditional-template-dir") {
+      config.knifeTraditionalTemplateDir = expandPath(next());
+    } else if (option == "--knife-traditional-threshold") {
+      config.knifeTraditionalThreshold = floatValue(option, next());
+    } else if (option == "--knife-traditional-min-margin") {
+      config.knifeTraditionalMinMargin = floatValue(option, next());
+    } else if (option == "--knife-traditional-max-templates-per-class") {
+      config.knifeTraditionalMaxTemplatesPerClass = integerValue(option, next());
     } else if (option == "--knife-cpu-threads") {
       config.knifeCpuThreads = integerValue(option, next());
     } else if (option == "--stage2-refresh-frames") {
@@ -384,6 +427,22 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
       config.stage2SmoothingWindow = integerValue(option, next());
     } else if (option == "--stage2-switch-confirmations") {
       config.stage2SwitchConfirmations = integerValue(option, next());
+    } else if (option == "--stage1-confirmations") {
+      config.stage1Confirmations = integerValue(option, next());
+    } else if (option == "--stage1-roi-config") {
+      config.stage1RoiConfig = expandPath(next());
+    } else if (option == "--no-stage1-roi") {
+      config.stage1RoiEnabled = false;
+    } else if (option == "--stage2-area-tolerance") {
+      config.stage2AreaTolerance = floatValue(option, next());
+    } else if (option == "--safe-zone-config") {
+      config.safeZoneConfig = expandPath(next());
+    } else if (option == "--safe-stable-seconds") {
+      config.safeStableSeconds = floatValue(option, next());
+    } else if (option == "--safe-confidence") {
+      config.safeConfidence = floatValue(option, next());
+    } else if (option == "--no-safe") {
+      config.safeEnabled = false;
     } else if (option == "--realsense-serial") {
       config.realsenseSerial = next();
     } else if (option == "--camera-width") {
@@ -460,7 +519,17 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
     }
     config.provider = "rknn";
     if (explicitOptions.count("--yolo-frame-stride") == 0) {
-      config.yoloFrameStride = 2;
+      // At the shared-camera default of 15 FPS, run YOLO on every submitted
+      // frame. This keeps the full-detector cadence at 15 FPS, matching the
+      // previous 30 FPS camera mode with a stride of two.
+      config.yoloFrameStride =
+          (isRealSenseSource(config.source) ||
+           (!config.source.empty() &&
+            std::all_of(config.source.begin(), config.source.end(),
+                        [](unsigned char value) { return std::isdigit(value); }))) &&
+                  config.cameraFps <= 15
+              ? 1
+              : 2;
     }
     if (explicitOptions.count("--yolo-dense-force-threshold") == 0) {
       config.yoloDenseForceThreshold = 8;
@@ -515,7 +584,7 @@ Source and output:
 
 Models:
   --weights PATH                 YOLO ONNX or RKNN model
-  --knife-mode MODE              classification or retrieval
+  --knife-mode MODE              classification, retrieval, or traditional
   --provider MODE                auto, rknn, or cpu (auto prefers RKNN)
   --rknn-model-dir PATH          converted RK3588 model directory
   --conf VALUE                   YOLO confidence threshold (default 0.25)
@@ -523,9 +592,20 @@ Models:
   --yolo-frame-stride N          run full-frame YOLO every N processed frames
   --yolo-dense-force-threshold N force full-frame YOLO at/above N targets; 0 disables
   --knife-min-area-ratio VALUE   reject tiny knife boxes (default disabled)
+  --knife-traditional-template-dir PATH
+                                 template images for traditional knife matching
 
 Runtime:
   --profile MODE                 custom, competition, or ui-recording
+  --stage1-confirmations N       YOLO detections required before stage 2 (default 2)
+  --stage1-roi-config PATH       #7A ROI and #1..#4 pixel-area calibration JSON
+  --no-stage1-roi                 disable #7A recognition ROI gating
+  --stage2-area-tolerance VALUE  relative area tolerance around #1..#4 mean (default 0.30)
+  --safe-zone-config PATH        obstacle ROI/distance calibration JSON
+  --safe-stable-seconds N        seconds of stable obstacle detection (default 2)
+  --safe-confidence VALUE        minimum YOLO obstacle confidence (default 0.25)
+  --no-safe                       disable /safe obstacle monitoring
+  --camera-fps N                 shared color/depth capture rate (default 15)
   --ui | --no-ui                 enable or disable the debug web UI
   --start-paused                 wait for an explicit UI resume before frame one
   --host HOST --port PORT        debug UI address (default 127.0.0.1:7860)

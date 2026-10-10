@@ -9,6 +9,11 @@
 
 #include "insight_cup/config.hpp"
 #include "insight_cup/logging.hpp"
+#if INSIGHT_CUP_HAS_ROS2
+#include "insight_cup/insight_topic.hpp"
+#include "insight_cup/motion_hold.hpp"
+#include "insight_cup/safe_topic.hpp"
+#endif
 #include "insight_cup/runtime.hpp"
 #include "insight_cup/state.hpp"
 #include "insight_cup/web.hpp"
@@ -31,6 +36,11 @@ int main(int argc, char** argv) {
     }
     RuntimeConfig config = std::move(commandLine.config);
     Logger logger(config.verbose);
+#if INSIGHT_CUP_HAS_ROS2 && !INSIGHT_CUP_HAS_MOTION_HOLD
+    logger.warning(
+        "mission_control_interfaces unavailable: inspection motion hold is "
+        "disabled; run only in debug mode");
+#endif
     const fs::path sessionDirectory =
         createSessionDirectory(config.outputRoot, config.sessionId);
     RuntimeState state(!config.noUi);
@@ -38,7 +48,34 @@ int main(int argc, char** argv) {
                            sessionDirectory.filename().string(),
                            displayPath(sessionDirectory));
     EventJournal journal(sessionDirectory / "events.jsonl", logger);
+#if INSIGHT_CUP_HAS_ROS2
+    VisionTopic visionTopic;
+    InsightTopic insightTopic;
+    SafeTopic safeTopic;
+#if INSIGHT_CUP_HAS_MOTION_HOLD
+    MotionHoldClient motionHoldClient;
+#endif
+    RecognitionRuntime runtime(
+        config, sessionDirectory, state, journal, logger,
+        [&visionTopic](const std::vector<std::string>& labels) {
+          visionTopic.publish(labels);
+        },
+        [&insightTopic](const json& payload) {
+          insightTopic.publish(payload);
+        },
+        [&safeTopic](const SafeObstacleState& state) {
+          safeTopic.publish(state);
+        }
+#if INSIGHT_CUP_HAS_MOTION_HOLD
+        ,
+        [&motionHoldClient](bool hold, const std::string& reason) {
+          return motionHoldClient.request(hold, "inspection", reason);
+        }
+#endif
+        );
+#else
     RecognitionRuntime runtime(config, sessionDirectory, state, journal, logger);
+#endif
 
     logger.info("SESSION id=" + sessionDirectory.filename().string() +
                 " source=" + displayPath(config.source));

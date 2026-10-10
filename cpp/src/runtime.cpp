@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <memory>
+#include <numeric>
 #include <random>
 #include <regex>
 #include <set>
@@ -48,6 +49,31 @@ bool isCameraIndexSource(const std::string& source) {
          std::all_of(source.begin(), source.end(), [](unsigned char value) {
            return std::isdigit(value);
          });
+}
+
+bool isTemporalSource(const std::string& source) {
+  return isRealSenseSource(source) || isCameraIndexSource(source) ||
+         isVideoSource(source);
+}
+
+// Calibrated YOLO rectangle-area floors for the current D455 setup.  These
+// are intentionally separate because knife boxes are substantially smaller
+// than person boxes in the same 1280x720 image.
+constexpr double kStage2PersonMinAreaPx = 11400.0;
+constexpr double kStage2KnifeMinAreaPx = 3233.0;
+
+double stage2MinAreaPx(const std::string& majorClass) {
+  if (majorClass == "f") {
+    return kStage2PersonMinAreaPx;
+  }
+  if (majorClass == "k") {
+    return kStage2KnifeMinAreaPx;
+  }
+  return 0.0;
+}
+
+int requiredStage1Confirmations(const RuntimeConfig& config) {
+  return isTemporalSource(config.source) ? config.stage1Confirmations : 1;
 }
 
 bool looksLikeLocalPath(const std::string& source) {
@@ -111,6 +137,52 @@ std::string fixed(double value, int precision = 1) {
   return output.str();
 }
 
+std::vector<cv::Point2f> calibrationPolygon(const json& value) {
+  std::vector<cv::Point2f> polygon;
+  if (!value.is_array()) {
+    return polygon;
+  }
+  for (const auto& point : value) {
+    if (point.is_array() && point.size() >= 2 && point[0].is_number() &&
+        point[1].is_number()) {
+      polygon.emplace_back(point[0].get<float>(), point[1].get<float>());
+    }
+  }
+  return polygon.size() >= 3 ? polygon : std::vector<cv::Point2f>();
+}
+
+std::vector<cv::Point2f> calibrationRecordPolygon(const json& record) {
+  auto polygon = calibrationPolygon(record.value("polygon", json()));
+  if (!polygon.empty()) {
+    return polygon;
+  }
+  json bbox = record.value("bbox", record.value("bbox_xyxy", json()));
+  if (!bbox.is_array() && record.value("x1", json()).is_number() &&
+      record.value("y1", json()).is_number() &&
+      record.value("x2", json()).is_number() &&
+      record.value("y2", json()).is_number()) {
+    bbox = {record.at("x1"), record.at("y1"), record.at("x2"),
+            record.at("y2")};
+  }
+  if (!bbox.is_array() || bbox.size() < 4 || !bbox[0].is_number() ||
+      !bbox[1].is_number() || !bbox[2].is_number() ||
+      !bbox[3].is_number()) {
+    return {};
+  }
+  const float x1 = bbox[0].get<float>();
+  const float y1 = bbox[1].get<float>();
+  const float x2 = bbox[2].get<float>();
+  const float y2 = bbox[3].get<float>();
+  if (!(x2 > x1 && y2 > y1)) {
+    return {};
+  }
+  return {{x1, y1}, {x2, y1}, {x2, y2}, {x1, y2}};
+}
+
+double calibrationArea(const std::vector<cv::Point2f>& polygon) {
+  return polygon.size() >= 3 ? std::abs(cv::contourArea(polygon)) : 0.0;
+}
+
 double median(std::deque<double> values) {
   if (values.empty()) {
     return 0.0;
@@ -166,7 +238,7 @@ Box clampBoxToFrame(const Box& box, const cv::Size& frameSize) {
 }
 
 Box predictedBox(const Box& box, const std::array<float, 4>& velocity,
-                 int frameGap, const cv::Size& frameSize) {
+                 double frameGap, const cv::Size& frameSize) {
   const auto values = boxValues(box);
   Box predicted{
       static_cast<int>(std::nearbyint(values[0] + velocity[0] * frameGap)),
@@ -303,12 +375,30 @@ fs::path createSessionDirectory(const fs::path& outputRoot,
 RecognitionRuntime::RecognitionRuntime(RuntimeConfig config,
                                        fs::path sessionDirectory,
                                        RuntimeState& state,
-                                       EventJournal& journal, Logger& logger)
+                                       EventJournal& journal, Logger& logger,
+                                       std::function<void(
+                                           const std::vector<std::string>&)>
+                                           visionPublisher,
+                                       std::function<void(const json&)>
+                                           insightPublisher,
+                                       std::function<void(
+                                           const SafeObstacleState&)>
+                                           safePublisher,
+                                       std::function<bool(
+                                           bool, const std::string&)>
+                                           motionHoldRequester)
     : config_(std::move(config)),
       sessionDirectory_(std::move(sessionDirectory)),
       state_(state),
       journal_(journal),
-      logger_(logger) {
+      logger_(logger),
+      visionPublisher_(std::move(visionPublisher)),
+      insightPublisher_(std::move(insightPublisher)),
+      safePublisher_(std::move(safePublisher)),
+      motionHoldRequester_(std::move(motionHoldRequester)) {
+  sourceFps_ = std::max(1, config_.cameraFps);
+  // Keep the stage-1 motion model on the configured source-rate reference
+  // from the first frame onward.
   // Keep OpenCV from creating a second thread pool on the small ARM board.
   // ONNX sessions are already explicitly bounded by the per-model settings.
   int cvThreads = 1;
@@ -338,6 +428,210 @@ RecognitionRuntime::~RecognitionRuntime() {
   if (shadowStream_.is_open()) {
     shadowStream_.close();
   }
+}
+
+void RecognitionRuntime::loadStage1Roi() {
+  stage1Roi_.clear();
+  obstacleRoiForDisplay_.clear();
+  stage1RoiConfigPath_.clear();
+  stage2ReferenceAreaPx_ = 0.0;
+  stage1RoiConfigured_ = false;
+
+  if (!config_.stage1RoiEnabled) {
+    stage1RoiConfigured_ = true;
+    modelMetadata_["stage1_roi"] = {
+        {"enabled", false},
+        {"configured", false},
+        {"reference_area_px", nullptr},
+        {"area_tolerance", config_.stage2AreaTolerance}};
+    logger_.info("STAGE1 ROI disabled; using the full camera frame");
+    return;
+  }
+
+  const fs::path requested = config_.stage1RoiConfig;
+  std::vector<fs::path> candidates;
+  std::error_code error;
+  if (!requested.empty() && fs::is_regular_file(requested, error)) {
+    candidates.push_back(requested);
+  } else if (!requested.empty()) {
+    const fs::path directory = requested.parent_path();
+    error.clear();
+    if (fs::is_directory(directory, error)) {
+      std::vector<std::pair<fs::file_time_type, fs::path>> timestamped;
+      std::error_code iteratorError;
+      for (const auto& entry : fs::directory_iterator(directory, iteratorError)) {
+        if (iteratorError) {
+          break;
+        }
+        std::error_code entryError;
+        if (!entry.is_regular_file(entryError) || entryError ||
+            entry.path().extension() != ".json" ||
+            entry.path().filename().string().find("distance_") != 0) {
+          continue;
+        }
+        const auto timestamp = entry.last_write_time(entryError);
+        if (!entryError) {
+          timestamped.emplace_back(timestamp, entry.path());
+        }
+      }
+      std::sort(timestamped.begin(), timestamped.end(),
+                [](const auto& left, const auto& right) {
+                  return left.first > right.first;
+                });
+      for (const auto& item : timestamped) {
+        candidates.push_back(item.second);
+      }
+    }
+  }
+
+  for (const auto& candidatePath : candidates) {
+    try {
+      std::ifstream stream(candidatePath);
+      if (!stream) {
+        throw std::runtime_error("cannot open file");
+      }
+      json payload;
+      stream >> payload;
+
+      std::vector<cv::Point2f> roi;
+      std::vector<double> referenceAreas;
+      if (payload.value("schema", std::string()) ==
+          "insight.stage1_roi.v1") {
+        roi = calibrationPolygon(payload.value("roi_polygon", json()));
+        if (roi.empty()) {
+          roi = calibrationPolygon(payload.value("roi", json()));
+        }
+        obstacleRoiForDisplay_ =
+            calibrationPolygon(payload.value("obstacle_roi", json()));
+        const auto values = payload.value("reference_areas_px", json::array());
+        if (values.is_array()) {
+          for (const auto& value : values) {
+            if (value.is_number() && value.get<double>() > 0.0) {
+              referenceAreas.push_back(value.get<double>());
+            }
+          }
+        }
+      } else {
+        const auto values = payload.value("boxes", json::array());
+        if (!values.is_array()) {
+          throw std::runtime_error("calibration has no boxes array");
+        }
+        struct Candidate {
+          int id = 0;
+          std::vector<cv::Point2f> polygon;
+          double areaPx = 0.0;
+        };
+        std::vector<Candidate> boxes;
+        for (const auto& value : values) {
+          const auto polygon = calibrationRecordPolygon(value);
+          if (polygon.size() < 3) {
+            continue;
+          }
+          double areaPx = calibrationArea(polygon);
+          const json savedArea = value.value("area_px2", json());
+          if (savedArea.is_number() && savedArea.get<double>() > 0.0) {
+            areaPx = savedArea.get<double>();
+          }
+          if (areaPx > 0.0) {
+            boxes.push_back({value.value("id", 0), polygon, areaPx});
+          }
+        }
+        if (boxes.empty()) {
+          throw std::runtime_error("calibration contains no polygons");
+        }
+
+        auto roiIterator = std::find_if(
+            boxes.begin(), boxes.end(),
+            [](const Candidate& value) { return value.id == 7; });
+        if (roiIterator == boxes.end()) {
+          throw std::runtime_error(
+              "calibration has no #7A person/knife ROI");
+        }
+        roi = roiIterator->polygon;
+        std::set<int> selectedIds;
+        for (int id = 1; id <= 4; ++id) {
+          const auto found = std::find_if(
+              boxes.begin(), boxes.end(),
+              [id](const Candidate& value) { return value.id == id; });
+          if (found != boxes.end() && found != roiIterator) {
+            referenceAreas.push_back(found->areaPx);
+            selectedIds.insert(found->id);
+          }
+        }
+        if (referenceAreas.size() < 4) {
+          std::vector<const Candidate*> remaining;
+          for (const auto& value : boxes) {
+            if (&value != &*roiIterator && selectedIds.count(value.id) == 0) {
+              remaining.push_back(&value);
+            }
+          }
+          std::sort(remaining.begin(), remaining.end(),
+                    [](const Candidate* left, const Candidate* right) {
+                      return left->id < right->id;
+                    });
+          for (const auto* value : remaining) {
+            if (referenceAreas.size() >= 4) {
+              break;
+            }
+            referenceAreas.push_back(value->areaPx);
+          }
+        }
+      }
+
+      if (roi.size() < 3 || referenceAreas.size() < 4) {
+        throw std::runtime_error(
+            "requires #7A ROI plus four #1..#4 reference regions");
+      }
+      const double sum =
+          std::accumulate(referenceAreas.begin(), referenceAreas.end(), 0.0);
+      if (!(sum > 0.0)) {
+        throw std::runtime_error("reference pixel areas are invalid");
+      }
+      stage1Roi_ = std::move(roi);
+      stage2ReferenceAreaPx_ = sum / referenceAreas.size();
+      stage1RoiConfigPath_ = candidatePath;
+      stage1RoiConfigured_ = true;
+      json polygon = json::array();
+      for (const auto& point : stage1Roi_) {
+        polygon.push_back({point.x, point.y});
+      }
+      modelMetadata_["stage1_roi"] = {
+          {"enabled", true},
+          {"configured", true},
+          {"config_path", displayPath(candidatePath)},
+          {"polygon", polygon},
+          {"obstacle_roi", [&] {
+             json value = json::array();
+             for (const auto& point : obstacleRoiForDisplay_) {
+               value.push_back({point.x, point.y});
+             }
+             return value;
+           }()},
+          {"reference_area_px", stage2ReferenceAreaPx_},
+          {"reference_regions", referenceAreas.size()},
+          {"area_tolerance", config_.stage2AreaTolerance}};
+      logger_.info("READY module=stage1_roi path=" +
+                   displayPath(candidatePath) + " roi_points=" +
+                   std::to_string(stage1Roi_.size()) + " reference_area_px=" +
+                   fixed(stage2ReferenceAreaPx_, 2) + " tolerance=" +
+                   fixed(config_.stage2AreaTolerance, 2) +
+                   " person_min_area_px=11400 knife_min_area_px=3233");
+      return;
+    } catch (const std::exception& exception) {
+      logger_.warning("STAGE1 ROI config ignored path=" +
+                      displayPath(candidatePath) + " error=" +
+                      exception.what());
+    }
+  }
+
+  modelMetadata_["stage1_roi"] = {
+      {"enabled", true},
+      {"configured", false},
+      {"config_path", displayPath(requested)},
+      {"reference_area_px", nullptr},
+      {"area_tolerance", config_.stage2AreaTolerance}};
+  logger_.warning("STAGE1 ROI unavailable; person/knife stage 2 is gated until "
+                  "#7A plus #1..#4 calibration is available");
 }
 
 void RecognitionRuntime::run() {
@@ -378,6 +672,7 @@ void RecognitionRuntime::run() {
 }
 
 void RecognitionRuntime::loadModels() {
+  loadStage1Roi();
   state_.setModule("yolo", "loading", displayPath(config_.weights));
   logger_.info("LOAD module=yolo model=" + displayPath(config_.weights));
   auto started = Clock::now();
@@ -412,9 +707,12 @@ void RecognitionRuntime::loadModels() {
                std::to_string(face_->referenceCount()) + " load_ms=" +
                fixed(loadMs));
 
-  const fs::path knifeSource = config_.knifeMode == "classification"
-                                   ? config_.knifeModelDir
-                                   : config_.knifeRetrievalModel;
+  const fs::path knifeSource =
+      config_.knifeMode == "classification"
+          ? config_.knifeModelDir
+          : config_.knifeMode == "retrieval"
+                ? config_.knifeRetrievalModel
+                : config_.knifeTraditionalTemplateDir;
   state_.setModule("knife", "loading", displayPath(knifeSource));
   logger_.info("LOAD module=knife mode=" + config_.knifeMode +
                " model=" + displayPath(knifeSource));
@@ -447,7 +745,14 @@ void RecognitionRuntime::loadModels() {
       config_.stage2Smoothing, config_.stage2SmoothingWindow,
       config_.stage2SwitchConfirmations, config_.faceThreshold,
       config_.faceMinMargin, knife_->threshold(), knife_->minMargin());
+  safeMonitor_ = std::make_unique<SafeObstacleMonitor>(config_, logger_);
+  modelMetadata_["safe"] = safeMonitor_->metadata();
+  logger_.info("READY module=safe enabled=" +
+               std::string(config_.safeEnabled ? "true" : "false") +
+               " stable_seconds=" + fixed(config_.safeStableSeconds, 1));
   modelMetadata_["temporal"] = {
+      {"stage1_confirmations", config_.stage1Confirmations},
+      {"stage1_confirmation_scope", "camera_and_video"},
       {"method", config_.stage2Smoothing},
       {"window_size", config_.stage2SmoothingWindow},
       {"switch_confirmations", config_.stage2SwitchConfirmations},
@@ -455,7 +760,9 @@ void RecognitionRuntime::loadModels() {
       {"stable_refresh_frames", config_.stage2StableRefreshFrames},
       {"scope", "per_track_id"},
   };
-  logger_.info("READY module=temporal method=" + config_.stage2Smoothing +
+  logger_.info("READY module=temporal stage1_confirmations=" +
+               std::to_string(config_.stage1Confirmations) +
+               " method=" + config_.stage2Smoothing +
                " window=" + std::to_string(config_.stage2SmoothingWindow) +
                " switch_confirmations=" +
                std::to_string(config_.stage2SwitchConfirmations) +
@@ -536,13 +843,51 @@ void RecognitionRuntime::runRealSense() {
                " stream=color size=" + std::to_string(config_.cameraWidth) +
                "x" + std::to_string(config_.cameraHeight) + " fps=" +
                std::to_string(config_.cameraFps));
+  sourceFps_ = static_cast<double>(config_.cameraFps);
+  scheduler_->setFrameRate(sourceFps_);
+  logger_.info("TEMPORAL source_fps=" + fixed(sourceFps_, 2) +
+               " refresh_frames=" +
+               std::to_string(scheduler_->refreshFrames()) +
+               " stable_refresh_frames=" +
+               std::to_string(scheduler_->stableRefreshFrames()));
 
   cv::VideoWriter writer;
   int frameIndex = 0;
   int processedIndex = 0;
+  int frameTimeouts = 0;
+  bool pipelineRunning = true;
   try {
     while (state_.waitUntilRunnable()) {
-      rs2::frameset frames = pipeline.wait_for_frames(5000);
+      rs2::frameset frames;
+      try {
+        frames = pipeline.wait_for_frames(1000);
+        frameTimeouts = 0;
+      } catch (const rs2::error& error) {
+        ++frameTimeouts;
+        logger_.warning("RealSense frame timeout " +
+                        std::to_string(frameTimeouts) + "/3: " +
+                        std::string(error.what()));
+        if (frameTimeouts >= 3) {
+          logger_.warning("RealSense stream stalled; restarting color stream");
+          if (pipelineRunning) {
+            pipeline.stop();
+            pipelineRunning = false;
+          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(250));
+          try {
+            profile = pipeline.start(cameraConfig);
+            pipelineRunning = true;
+            frameTimeouts = 0;
+            logger_.info("RealSense color stream restarted");
+          } catch (const rs2::error& restartError) {
+            logger_.warning("RealSense stream restart failed: " +
+                            std::string(restartError.what()));
+          }
+        } else {
+          std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+        continue;
+      }
       rs2::video_frame color = frames.get_color_frame();
       if (!color) {
         throw std::runtime_error("RealSense frameset has no color frame");
@@ -582,11 +927,15 @@ void RecognitionRuntime::runRealSense() {
       }
     }
   } catch (...) {
-    pipeline.stop();
+    if (pipelineRunning) {
+      pipeline.stop();
+    }
     writer.release();
     throw;
   }
-  pipeline.stop();
+  if (pipelineRunning) {
+    pipeline.stop();
+  }
   writer.release();
   if (processedIndex == 0 && !state_.stopRequested()) {
     throw std::runtime_error("RealSense camera produced no color frames");
@@ -667,8 +1016,15 @@ void RecognitionRuntime::runCapture() {
   }
   double sourceFps = capture.get(cv::CAP_PROP_FPS);
   if (!std::isfinite(sourceFps) || sourceFps < 1.0 || sourceFps > 240.0) {
-    sourceFps = 30.0;
+    sourceFps = cameraIndex ? static_cast<double>(config_.cameraFps) : 30.0;
   }
+  sourceFps_ = sourceFps;
+  scheduler_->setFrameRate(sourceFps_);
+  logger_.info("TEMPORAL source_fps=" + fixed(sourceFps_, 2) +
+               " refresh_frames=" +
+               std::to_string(scheduler_->refreshFrames()) +
+               " stable_refresh_frames=" +
+               std::to_string(scheduler_->stableRefreshFrames()));
   const int totalFrames = static_cast<int>(capture.get(cv::CAP_PROP_FRAME_COUNT));
   const bool paceVideo = !cameraIndex && config_.paceVideo;
   state_.setSourceInfo({
@@ -736,14 +1092,20 @@ void RecognitionRuntime::runCapture() {
   }
 }
 
+double RecognitionRuntime::normalizedFrameGap(int frameGap) const {
+  return std::max(0.0, static_cast<double>(std::max(0, frameGap)) * 30.0 /
+                            std::max(sourceFps_, 1.0));
+}
+
 std::optional<float> RecognitionRuntime::stage1AssociationScore(
     const Stage1Track& track, const DetectedRegion& region,
     const cv::Size& frameSize) const {
   if (track.region.handoff.majorClass != region.handoff.majorClass) {
     return std::nullopt;
   }
-  const int frameGap =
+  const int rawFrameGap =
       std::max(1, region.handoff.frameIndex - track.lastYoloFrame);
+  const double frameGap = normalizedFrameGap(rawFrameGap);
   const Box predicted =
       predictedBox(track.region.handoff.bbox, track.velocity, frameGap,
                    frameSize);
@@ -785,10 +1147,6 @@ std::optional<float> RecognitionRuntime::stage1AssociationScore(
 
 DetectionFrame RecognitionRuntime::trackYoloDetections(
     DetectionFrame detectionFrame, const cv::Size& frameSize, int frameIndex) {
-  if (config_.yoloFrameStride <= 1) {
-    return detectionFrame;
-  }
-
   struct Pair {
     float score = 0.0F;
     std::size_t regionIndex = 0;
@@ -828,11 +1186,13 @@ DetectionFrame RecognitionRuntime::trackYoloDetections(
     matchedTracks.insert(pair.trackIndex);
     auto& track = stage1Tracks_[pair.trackIndex];
     DetectedRegion region = detectionFrame.regions[pair.regionIndex];
-    const int frameGap = std::max(1, frameIndex - track.lastYoloFrame);
+    const double frameGap = normalizedFrameGap(
+        std::max(1, frameIndex - track.lastYoloFrame));
     const auto current = boxValues(region.handoff.bbox);
     const auto previous = boxValues(track.region.handoff.bbox);
     for (std::size_t index = 0; index < current.size(); ++index) {
-      const float observed = (current[index] - previous[index]) / frameGap;
+      const float observed = static_cast<float>(
+          (current[index] - previous[index]) / frameGap);
       track.velocity[index] =
           track.hits <= 1 ? observed : 0.70F * observed + 0.30F * track.velocity[index];
     }
@@ -840,7 +1200,9 @@ DetectionFrame RecognitionRuntime::trackYoloDetections(
     track.lastYoloFrame = frameIndex;
     track.missedYoloFrames = 0;
     ++track.hits;
-    filtered.regions.push_back(std::move(region));
+    if (track.hits >= requiredStage1Confirmations(config_)) {
+      filtered.regions.push_back(std::move(region));
+    }
   }
 
   for (std::size_t regionIndex = 0; regionIndex < detectionFrame.regions.size();
@@ -862,7 +1224,9 @@ DetectionFrame RecognitionRuntime::trackYoloDetections(
     track.region = region;
     track.lastYoloFrame = frameIndex;
     stage1Tracks_.push_back(std::move(track));
-    filtered.regions.push_back(std::move(region));
+    if (requiredStage1Confirmations(config_) <= 1) {
+      filtered.regions.push_back(std::move(region));
+    }
   }
 
   std::vector<Stage1Track> retained;
@@ -886,6 +1250,9 @@ DetectionFrame RecognitionRuntime::predictTrackedDetections(
   DetectionFrame detectionFrame;
   int detectionIndex = 0;
   for (const auto& track : stage1Tracks_) {
+    if (track.hits < requiredStage1Confirmations(config_)) {
+      continue;
+    }
     const int frameGap = frameIndex - track.lastYoloFrame;
     if (frameGap <= 0 || frameGap > std::max(1, config_.yoloFrameStride)) {
       continue;
@@ -893,9 +1260,17 @@ DetectionFrame RecognitionRuntime::predictTrackedDetections(
     DetectedRegion region = track.region;
     region.handoff.frameIndex = frameIndex;
     region.handoff.bbox =
-        predictedBox(track.region.handoff.bbox, track.velocity, frameGap,
-                     frameSize);
+        predictedBox(track.region.handoff.bbox, track.velocity,
+                     normalizedFrameGap(frameGap), frameSize);
     if (!region.handoff.bbox.valid()) {
+      continue;
+    }
+    const cv::Point2f center(
+        0.5F * static_cast<float>(region.handoff.bbox.x1 +
+                                  region.handoff.bbox.x2),
+        0.5F * static_cast<float>(region.handoff.bbox.y1 +
+                                  region.handoff.bbox.y2));
+    if (!stage1PointAllowed(region.handoff.majorClass, center)) {
       continue;
     }
     region.handoff.confidence =
@@ -911,11 +1286,145 @@ DetectionFrame RecognitionRuntime::predictTrackedDetections(
   return detectionFrame;
 }
 
+DetectionFrame RecognitionRuntime::detectStage1Region(const cv::Mat& frame,
+                                                      int frameIndex) {
+  if (!config_.stage1RoiEnabled) {
+    return detector_->detect(frame, frameIndex);
+  }
+  const auto* obstacleRoi = configuredObstacleRoi();
+  const bool hasPersonKnifeRoi = stage1RoiConfigured_ && stage1Roi_.size() >= 3;
+  const bool hasObstacleRoi = obstacleRoi && obstacleRoi->size() >= 3;
+  if (!hasPersonKnifeRoi && !hasObstacleRoi) {
+    return {};
+  }
+
+  cv::Rect bounds;
+  bool hasBounds = false;
+  const auto includeBounds = [&](const std::vector<cv::Point2f>& polygon) {
+    const cv::Rect polygonBounds = cv::boundingRect(polygon);
+    if (!hasBounds) {
+      bounds = polygonBounds;
+      hasBounds = true;
+    } else {
+      bounds |= polygonBounds;
+    }
+  };
+  if (hasPersonKnifeRoi) {
+    includeBounds(stage1Roi_);
+  }
+  if (hasObstacleRoi) {
+    includeBounds(*obstacleRoi);
+  }
+  if (!hasBounds) {
+    return {};
+  }
+  bounds &= cv::Rect(0, 0, frame.cols, frame.rows);
+  if (bounds.width <= 0 || bounds.height <= 0) {
+    return {};
+  }
+  cv::Mat region = frame(bounds).clone();
+  cv::Mat mask = cv::Mat::zeros(region.size(), CV_8UC1);
+  const auto fillLocalPolygon = [&](const std::vector<cv::Point2f>& polygon) {
+    std::vector<cv::Point> localPolygon;
+    localPolygon.reserve(polygon.size());
+    for (const auto& point : polygon) {
+      localPolygon.emplace_back(
+          std::clamp(static_cast<int>(std::nearbyint(point.x)) - bounds.x, 0,
+                     bounds.width - 1),
+          std::clamp(static_cast<int>(std::nearbyint(point.y)) - bounds.y, 0,
+                     bounds.height - 1));
+    }
+    cv::fillPoly(mask, std::vector<std::vector<cv::Point>>{localPolygon},
+                 cv::Scalar(255));
+  };
+  if (hasPersonKnifeRoi) {
+    fillLocalPolygon(stage1Roi_);
+  }
+  if (hasObstacleRoi) {
+    fillLocalPolygon(*obstacleRoi);
+  }
+  region.setTo(cv::Scalar(114, 114, 114), mask == 0);
+
+  DetectionFrame detected = detector_->detect(region, frameIndex);
+  DetectionFrame filtered;
+  filtered.inferenceMs = detected.inferenceMs;
+  filtered.ignoredClasses = std::move(detected.ignoredClasses);
+  for (auto& item : detected.regions) {
+    auto& box = item.handoff.bbox;
+    box.x1 += bounds.x;
+    box.x2 += bounds.x;
+    box.y1 += bounds.y;
+    box.y2 += bounds.y;
+    box.x1 = std::clamp(box.x1, 0, frame.cols);
+    box.x2 = std::clamp(box.x2, 0, frame.cols);
+    box.y1 = std::clamp(box.y1, 0, frame.rows);
+    box.y2 = std::clamp(box.y2, 0, frame.rows);
+    if (!box.valid()) {
+      continue;
+    }
+    const cv::Point2f center(
+        0.5F * static_cast<float>(box.x1 + box.x2),
+        0.5F * static_cast<float>(box.y1 + box.y2));
+    if (stage1PointAllowed(item.handoff.majorClass, center)) {
+      filtered.regions.push_back(std::move(item));
+    }
+  }
+  return filtered;
+}
+
+const std::vector<cv::Point2f>* RecognitionRuntime::configuredObstacleRoi() const {
+  if (safeMonitor_ && safeMonitor_->obstacleRoi().size() >= 3) {
+    return &safeMonitor_->obstacleRoi();
+  }
+  if (obstacleRoiForDisplay_.size() >= 3) {
+    return &obstacleRoiForDisplay_;
+  }
+  return nullptr;
+}
+
+bool RecognitionRuntime::stage1PointAllowed(
+    const std::string& majorClass, const cv::Point2f& center) const {
+  if (!config_.stage1RoiEnabled) {
+    return true;
+  }
+  if (majorClass == "b0") {
+    const auto* obstacleRoi = configuredObstacleRoi();
+    return obstacleRoi &&
+           cv::pointPolygonTest(*obstacleRoi, center, false) >= 0.0;
+  }
+  if (majorClass == "f" || majorClass == "k") {
+    return stage1RoiConfigured_ && stage1Roi_.size() >= 3 &&
+           cv::pointPolygonTest(stage1Roi_, center, false) >= 0.0;
+  }
+  return false;
+}
+
+bool RecognitionRuntime::stage2AreaEligible(const DetectedRegion& region) const {
+  if (region.handoff.majorClass == "b0" || !config_.stage1RoiEnabled) {
+    return true;
+  }
+  if (!stage1RoiConfigured_ || stage2ReferenceAreaPx_ <= 0.0) {
+    return false;
+  }
+  if (region.handoff.majorClass != "f" && region.handoff.majorClass != "k") {
+    return false;
+  }
+  const double area = static_cast<double>(region.handoff.bbox.width()) *
+                      static_cast<double>(region.handoff.bbox.height());
+  const double lower = stage2MinAreaPx(region.handoff.majorClass);
+  return lower > 0.0 && area >= lower;
+}
+
 DetectionFrame RecognitionRuntime::stage1Frame(const cv::Mat& frame,
                                                int frameIndex,
                                                int processedIndex) {
+  if (config_.yoloFrameStride <= 1 && !isTemporalSource(config_.source)) {
+    return detectStage1Region(frame, frameIndex);
+  }
   if (config_.yoloFrameStride <= 1) {
-    return detector_->detect(frame, frameIndex);
+    DetectionFrame detectionFrame = detectStage1Region(frame, frameIndex);
+    return trackYoloDetections(std::move(detectionFrame), frame.size(),
+                               frameIndex);
   }
   const bool hasLiveTracks = std::any_of(
       stage1Tracks_.begin(), stage1Tracks_.end(), [&](const Stage1Track& track) {
@@ -930,7 +1439,7 @@ DetectionFrame RecognitionRuntime::stage1Frame(const cv::Mat& frame,
   const bool runYolo =
       forceNextYoloFrame_ || !hasLiveTracks || strideDue || denseScene;
   if (runYolo) {
-    DetectionFrame detectionFrame = detector_->detect(frame, frameIndex);
+    DetectionFrame detectionFrame = detectStage1Region(frame, frameIndex);
     lastFullYoloProcessedIndex_ = processedIndex;
     forceNextYoloFrame_ = false;
     DetectionFrame tracked =
@@ -970,9 +1479,56 @@ cv::Mat RecognitionRuntime::processFrame(
     frameStarted = Clock::now();
   }
   DetectionFrame detectionFrame = stage1Frame(frame, frameIndex, processedIndex);
+  std::optional<SafeObstacleState> safeState;
+  if (safeMonitor_) {
+    safeState = safeMonitor_->update(
+        detectionFrame, frame.size(), processedIndex, sourceTimeMs);
+    if (safePublisher_) {
+      safePublisher_(*safeState);
+    }
+  }
   cv::Mat annotated;
   if (needsAnnotatedFrame) {
     annotated = frame.clone();
+    const auto drawRoi = [&](const std::vector<cv::Point2f>& polygon,
+                             const cv::Scalar& color,
+                             const std::string& label) {
+      if (polygon.size() < 3) {
+        return;
+      }
+      std::vector<cv::Point> points;
+      points.reserve(polygon.size());
+      for (const auto& point : polygon) {
+        points.emplace_back(
+            std::clamp(static_cast<int>(std::nearbyint(point.x)), 0,
+                       std::max(0, annotated.cols - 1)),
+            std::clamp(static_cast<int>(std::nearbyint(point.y)), 0,
+                       std::max(0, annotated.rows - 1)));
+      }
+      cv::polylines(annotated, std::vector<std::vector<cv::Point>>{points},
+                    true, color, 2, cv::LINE_AA);
+      const cv::Point anchor = points.front();
+      cv::putText(annotated, label,
+                  cv::Point(std::max(8, anchor.x),
+                            std::max(24, anchor.y - 8)),
+                  cv::FONT_HERSHEY_SIMPLEX, 0.55, color, 2, cv::LINE_AA);
+    };
+    if (config_.stage1RoiEnabled && stage1RoiConfigured_) {
+      drawRoi(stage1Roi_, cv::Scalar(0, 220, 80),
+              "#7A PERSON/KNIFE ROI | F>=11400 K>=3233 PX2");
+    }
+    const std::vector<cv::Point2f>* obstacleRoi = &obstacleRoiForDisplay_;
+    if (safeMonitor_ && !safeMonitor_->obstacleRoi().empty()) {
+      obstacleRoi = &safeMonitor_->obstacleRoi();
+    }
+    drawRoi(*obstacleRoi, cv::Scalar(0, 80, 255), "#1A OBSTACLE ROI");
+    if (safeState) {
+      cv::putText(annotated, "SAFE: " + safeState->status,
+                  cv::Point(12, 28), cv::FONT_HERSHEY_SIMPLEX, 0.65,
+                  safeState->obstacle ? cv::Scalar(0, 80, 255)
+                                      : cv::Scalar(230, 230, 230),
+                  2, cv::LINE_AA);
+    }
   }
   double stage2TotalMs = 0.0;
   int recognitionCount = 0;
@@ -980,10 +1536,115 @@ cv::Mat RecognitionRuntime::processFrame(
     logger_.warning("DROP frame=" + std::to_string(frameIndex) +
                     " raw_class=" + rawName + " reason=unsupported_class");
   }
-  std::vector<PrepareJob> prepareJobs;
-  prepareJobs.reserve(detectionFrame.regions.size());
+  DetectionFrame stage2Frame;
+  stage2Frame.inferenceMs = detectionFrame.inferenceMs;
+  stage2Frame.ignoredClasses = detectionFrame.ignoredClasses;
+  stage2Frame.regions.reserve(detectionFrame.regions.size());
   for (const auto& region : detectionFrame.regions) {
     state_.recordDetection(region.handoff.majorClass);
+    if (stage2AreaEligible(region)) {
+      stage2Frame.regions.push_back(region);
+    } else {
+      if (!annotated.empty()) {
+        const Box& box = region.handoff.bbox;
+        const cv::Scalar gateColor(0, 215, 255);
+        cv::rectangle(annotated, cv::Point(box.x1, box.y1),
+                      cv::Point(box.x2 - 1, box.y2 - 1), gateColor, 2);
+        const double area = static_cast<double>(box.width()) * box.height();
+        std::ostringstream gateLabel;
+        gateLabel << region.handoff.majorClass << ">stage2_wait area="
+                  << std::fixed << std::setprecision(0) << area;
+        cv::putText(annotated, gateLabel.str(),
+                    cv::Point(std::max(0, box.x1),
+                              std::max(16, box.y1 - 6)),
+                    cv::FONT_HERSHEY_SIMPLEX, 0.48, gateColor, 1,
+                    cv::LINE_AA);
+      }
+      logger_.debug("STAGE2 wait frame=" + std::to_string(frameIndex) +
+                    " class=" + region.handoff.majorClass +
+                    " bbox_area_px=" +
+                    std::to_string(region.handoff.bbox.width() *
+                                   region.handoff.bbox.height()) +
+                    " reference_area_px=" + fixed(stage2ReferenceAreaPx_, 2));
+    }
+  }
+
+  const bool hasInspectionCandidate = std::any_of(
+      stage2Frame.regions.begin(), stage2Frame.regions.end(),
+      [](const DetectedRegion& region) {
+        return region.handoff.majorClass == "f" ||
+               region.handoff.majorClass == "k";
+      });
+  if (hasInspectionCandidate) {
+    inspectionClearFrames_ = 0;
+    if (!inspectionEpisodeActive_) {
+      inspectionEpisodeActive_ = true;
+      inspectionReported_ = false;
+      inspectionReleasePending_ = false;
+      inspectionStableFrames_ = 0;
+      inspectionHoldFrames_ = 0;
+      inspectionStableLabels_.clear();
+      logger_.info("INSPECTION episode_started frame=" +
+                   std::to_string(frameIndex));
+    }
+    if (!inspectionHoldActive_ && !inspectionReported_ &&
+        !inspectionReleasePending_) {
+      bool held = true;
+      if (motionHoldRequester_) {
+        held = motionHoldRequester_(true, "recognizing clue");
+      } else {
+        if (!motionHoldUnavailableWarned_) {
+          logger_.warning(
+              "MOTION_HOLD service is unavailable; continuing in debug mode "
+              "without actually stopping the vehicle");
+          motionHoldUnavailableWarned_ = true;
+        }
+      }
+      if (held) {
+        inspectionHoldActive_ = true;
+        inspectionHoldFrames_ = 0;
+        logger_.info("INSPECTION hold=true frame=" +
+                     std::to_string(frameIndex));
+      } else {
+        logger_.error("INSPECTION hold=true failed; stage2 is deferred");
+        stage2Frame.regions.clear();
+      }
+    }
+  } else if (!inspectionHoldActive_) {
+    ++inspectionClearFrames_;
+    if (inspectionClearFrames_ >= 5) {
+      inspectionEpisodeActive_ = false;
+      inspectionReported_ = false;
+      inspectionReleasePending_ = false;
+      inspectionStableFrames_ = 0;
+      inspectionHoldFrames_ = 0;
+      inspectionStableLabels_.clear();
+    }
+  }
+
+  if (inspectionHoldActive_ && !inspectionReported_) {
+    ++inspectionHoldFrames_;
+    const int timeoutFrames = std::max(
+        1, static_cast<int>(std::nearbyint(config_.cameraFps * 5.0F)));
+    if (inspectionHoldFrames_ > timeoutFrames) {
+      logger_.warning("INSPECTION stage2 timeout; releasing motion hold");
+      inspectionReported_ = true;
+      inspectionStableFrames_ = 0;
+      if (motionHoldRequester_) {
+        if (motionHoldRequester_(false, "stage2 timeout")) {
+          inspectionHoldActive_ = false;
+        } else {
+          inspectionReleasePending_ = true;
+        }
+      } else {
+        inspectionHoldActive_ = false;
+      }
+    }
+  }
+
+  std::vector<PrepareJob> prepareJobs;
+  prepareJobs.reserve(stage2Frame.regions.size());
+  for (const auto& region : stage2Frame.regions) {
     prepareJobs.emplace_back([this, frame, detection = region.handoff]() {
       PreparedStage2Input prepared;
       prepared.crop =
@@ -995,13 +1656,14 @@ cv::Mat RecognitionRuntime::processFrame(
     });
   }
   const auto resolutions = scheduler_->resolveFrame(
-      detectionFrame.regions,
+      stage2Frame.regions,
       [this](const Stage1Detection& detection) {
         return router_->route(detection);
       },
       prepareJobs);
-  for (std::size_t index = 0; index < detectionFrame.regions.size(); ++index) {
-    const auto& region = detectionFrame.regions[index];
+  std::set<std::string> stableVisionLabels;
+  for (std::size_t index = 0; index < stage2Frame.regions.size(); ++index) {
+    const auto& region = stage2Frame.regions[index];
     const auto& resolution = resolutions[index];
     requestYoloOnUnstableResult(resolution);
     if (!competition) {
@@ -1016,6 +1678,23 @@ cv::Mat RecognitionRuntime::processFrame(
       writeShadowEvent(resolution);
     }
     if (isAcceptedDecision(resolution.decision)) {
+      if (resolution.decision.status == "matched" &&
+          resolution.decision.predictedClass) {
+        const auto& label = *resolution.decision.predictedClass;
+        if (label.size() >= 2 &&
+            (label.front() == 'f' || label.front() == 'k')) {
+          try {
+            const int number = std::stoi(label.substr(1));
+            if (number >= 1 && number <= 10 &&
+                label == std::string(1, label.front()) +
+                             std::to_string(number)) {
+              stableVisionLabels.insert(label);
+            }
+          } catch (const std::exception&) {
+            // Ignore labels outside the f1..f10 and k1..k10 topic contract.
+          }
+        }
+      }
       if (!annotated.empty()) {
         drawResult(annotated, region, resolution.decision);
       }
@@ -1023,6 +1702,101 @@ cv::Mat RecognitionRuntime::processFrame(
         ++recognitionCount;
       }
     }
+  }
+  std::vector<std::string> labels(stableVisionLabels.begin(),
+                                  stableVisionLabels.end());
+  std::stable_sort(labels.begin(), labels.end(), [](const auto& left,
+                                                    const auto& right) {
+    if (left.front() != right.front()) {
+      return left.front() == 'f';
+    }
+    return std::stoi(left.substr(1)) < std::stoi(right.substr(1));
+  });
+
+  // A stable target event is the authoritative result for this frame.  Do
+  // not immediately overwrite it with the ordinary empty-target aggregate
+  // message below; that made /insight appear to lose the result to subscribers.
+  bool publishedTargetEventThisFrame = false;
+  if (inspectionHoldActive_ && !inspectionReported_ && !labels.empty()) {
+    const std::set<std::string> currentLabels(labels.begin(), labels.end());
+    if (currentLabels == inspectionStableLabels_) {
+      ++inspectionStableFrames_;
+    } else {
+      inspectionStableLabels_ = currentLabels;
+      inspectionStableFrames_ = 1;
+    }
+    const int requiredStableFrames =
+        std::max(2, config_.stage2SmoothingWindow);
+    if (inspectionStableFrames_ >= requiredStableFrames) {
+      json targetLabels = json::array();
+      for (const auto& label : labels) {
+        targetLabels.push_back(label);
+      }
+      ++recognitionEventId_;
+      json finalEvent = {
+          {"timestamp_ms",
+           static_cast<std::int64_t>(std::chrono::duration_cast<
+               std::chrono::milliseconds>(std::chrono::system_clock::now()
+                                              .time_since_epoch())
+                                            .count())},
+          {"obstacle_detected",
+           safeState ? safeState->obstacle : false},
+          {"obstacle_distance_cm",
+           safeState && safeState->obstacle ? safeState->distanceCm : 0},
+          {"target_detected", true},
+          {"targets", targetLabels}};
+      if (insightPublisher_) {
+        insightPublisher_(finalEvent);
+        publishedTargetEventThisFrame = true;
+      }
+      logger_.info("INSIGHT target_event=" +
+                   std::to_string(recognitionEventId_) +
+                   " targets=" + finalEvent["targets"].dump());
+      inspectionReported_ = true;
+      inspectionStableFrames_ = 0;
+      bool released = true;
+      if (motionHoldRequester_) {
+        released = motionHoldRequester_(false, "");
+      }
+      if (released) {
+        inspectionHoldActive_ = false;
+        inspectionReleasePending_ = false;
+        logger_.info("INSPECTION hold=false frame=" +
+                     std::to_string(frameIndex));
+      } else {
+        inspectionReleasePending_ = true;
+        logger_.error("INSPECTION hold=false failed; retrying");
+      }
+    }
+  }
+
+  if (inspectionReleasePending_ && motionHoldRequester_) {
+    if (motionHoldRequester_(false, "")) {
+      inspectionHoldActive_ = false;
+      inspectionReleasePending_ = false;
+      logger_.info("INSPECTION hold=false retry succeeded");
+    }
+  }
+
+  if (visionPublisher_) {
+    // Keep the internal debug topic compatible with the former /insight
+    // contract: only the stable fN/kN labels are published.
+    visionPublisher_(labels);
+  }
+
+  if (insightPublisher_ && !publishedTargetEventThisFrame) {
+    json aggregateTargets = json::array();
+    insightPublisher_({
+        {"timestamp_ms",
+         static_cast<std::int64_t>(std::chrono::duration_cast<
+             std::chrono::milliseconds>(std::chrono::system_clock::now()
+                                            .time_since_epoch())
+                                          .count())},
+        {"obstacle_detected", safeState ? safeState->obstacle : false},
+        {"obstacle_distance_cm",
+         safeState && safeState->obstacle ? safeState->distanceCm : 0},
+        {"target_detected", false},
+        {"targets", aggregateTargets}});
   }
 
   lastEventFrameSize_ = frame.size();
@@ -1304,7 +2078,7 @@ void RecognitionRuntime::writeManifest() const {
          {"to", "stage2 scheduler"},
          {"payload", {"id", "major_class", "confidence", "bbox_xyxy"}},
          {"excluded", {"raw_yolo_class", "raw_yolo_class_id"}}},
-        {{"condition", "major_class == f or k and stage2 refresh is due"},
+        {{"condition", "stable f/k track and stage2 refresh is due"},
          {"from", "stage2 scheduler"},
          {"to", "router"},
          {"payload", {"id", "major_class", "confidence", "bbox_xyxy", "crop"}}},
@@ -1317,7 +2091,7 @@ void RecognitionRuntime::writeManifest() const {
          {"to", "InsightFace face recognition"}},
         {{"condition", "major_class == k"},
          {"from", "router"},
-         {"to", "PaddleClas knife recognition"}},
+         {"to", "configured knife recognition"}},
         {{"condition", "major_class == b0"},
          {"from", "router"},
          {"to", "passthrough"}}}},
