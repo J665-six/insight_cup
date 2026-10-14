@@ -52,6 +52,7 @@ class RecognitionRuntime {
   void loadStage1Roi();
   void runSource();
   void runRealSense();
+  void runRosSubscriber();
   void runImages(const fs::path& source);
   void runCapture();
   DetectionFrame stage1Frame(const cv::Mat& frame, int frameIndex,
@@ -108,6 +109,8 @@ class RecognitionRuntime {
   std::vector<cv::Point2f> obstacleRoiForDisplay_;
   fs::path stage1RoiConfigPath_;
   double stage2ReferenceAreaPx_ = 0.0;
+  double stage2PersonReferenceAreaPx_ = 0.0;
+  double stage2KnifeReferenceAreaPx_ = 0.0;
   bool stage1RoiConfigured_ = false;
   json modelMetadata_ = json::object();
   std::vector<std::string> mediaOutputs_;
@@ -141,6 +144,7 @@ class RecognitionRuntime {
     int lastYoloFrame = 0;
     std::array<float, 4> velocity = {0.0F, 0.0F, 0.0F, 0.0F};
     int hits = 1;
+    int stableBoxHits = 1;
     int missedYoloFrames = 0;
   };
   std::vector<Stage1Track> stage1Tracks_;
@@ -148,6 +152,10 @@ class RecognitionRuntime {
   std::optional<int> lastFullYoloProcessedIndex_;
   int lastFullYoloTargetCount_ = 0;
   bool forceNextYoloFrame_ = true;
+  // ROS image topics may publish the navigation camera at a different
+  // resolution than the calibrated 848x480 runtime geometry.  Keep one
+  // warning so the normalization is visible without flooding the log.
+  bool rosSourceResizeLogged_ = false;
 };
 
 }  // namespace insight_cup

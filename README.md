@@ -12,7 +12,8 @@ source /home/j/Public-Safety-Event-/install/setup.bash
 ./build_cpp.sh
 ```
 
-正式识别使用 Intel RealSense D455 的 `1280x720@15 FPS` 彩色画面。
+正式识别默认使用 Intel RealSense D455 的 `848x480@15 FPS` 彩色画面，
+与导航的相机配置一致；YOLO 内部仍使用 `640x640` 输入。
 
 ## 正式 UI 启动
 
@@ -49,6 +50,11 @@ source /home/j/Public-Safety-Event-/install/setup.bash
   --provider auto \
   --port 7860
 ```
+
+标定文件已经放在 `outputs/distance/`，正式测试不要添加
+`--no-stage1-roi` 或 `--no-safe`；这两个选项会分别关闭 ROI 门控和安全模块。
+如果为了调试必须关闭门控，程序仍会在 UI 上以 `DISPLAY ONLY` 标出已加载的 ROI，
+但识别会回到整幅画面。
 
 浏览器打开：
 
@@ -116,3 +122,7 @@ ros2 topic echo /insight --field data | jq -C -R --unbuffered 'fromjson? // .'
   "targets": ["f5", "k3"]
 }
 ```
+
+识别程序本身只发布 `/vision` 和 `/insight`，不直接访问扬声器。车载播报需要同时运行
+`navigation_mission_manager` 和 `cup_car_serial`。`/insight` 中出现至少一个人物或刀具
+标签，并连续达到稳定帧数后才生成播报事件；单独识别到人物也会进入播报链路。

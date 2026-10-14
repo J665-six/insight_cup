@@ -136,6 +136,7 @@ if(INSIGHT_CUP_ENABLE_ROS2)
   find_package(ament_cmake REQUIRED)
   find_package(rclcpp REQUIRED)
   find_package(std_msgs REQUIRED)
+  find_package(sensor_msgs REQUIRED)
   set(INSIGHT_CUP_HAS_ROS2 1)
 endif()
 
@@ -204,7 +205,7 @@ target_link_libraries(insight-cup
   "${BROTLI_COMMON_LIBRARY}")
 
 if(INSIGHT_CUP_HAS_ROS2)
-  ament_target_dependencies(insight-cup rclcpp std_msgs)
+  ament_target_dependencies(insight-cup rclcpp std_msgs sensor_msgs)
   if(INSIGHT_CUP_HAS_MOTION_HOLD)
     ament_target_dependencies(insight-cup mission_control_interfaces)
   endif()

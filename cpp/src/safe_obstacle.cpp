@@ -321,10 +321,13 @@ void SafeObstacleMonitor::loadPixelCalibration(
 
   const json horizontal = readPayload(horizontalPath);
   const json vertical = readPayload(verticalPath);
-  horizontalSamples_ = readSamples(horizontal, {3, 3, 3, 3, 3});
+  // Current horizontal calibration has four groups (100/80/60/40 cm).
+  // Vertical calibration also includes the 20 cm group.
+  horizontalSamples_ = readSamples(horizontal, {3, 3, 3, 3});
   verticalSamples_ = readSamples(vertical, {3, 4, 3, 3, 3});
-  if (horizontalSamples_.size() < 5 || verticalSamples_.size() < 5) {
-    throw std::runtime_error("pixel calibration needs five distance groups");
+  if (horizontalSamples_.size() < 4 || verticalSamples_.size() < 5) {
+    throw std::runtime_error(
+        "pixel calibration needs four horizontal and five vertical distance groups");
   }
 
   // Prefer the latest explicit trapezoid calibration. The older
@@ -339,7 +342,9 @@ void SafeObstacleMonitor::loadPixelCalibration(
     }
     const json payload = readPayload(candidate);
     for (const auto& value : payload.value("boxes", json::array())) {
-      if (value.value("id", 0) == 1) {
+      // The new recorder session labels the obstacle ROI as #20; legacy
+      // exported files use #1. Accept either label.
+      if (value.value("id", 0) == 1 || value.value("id", 0) == 20) {
         obstacleRoi_ = readRecordPolygon(value);
         break;
       }

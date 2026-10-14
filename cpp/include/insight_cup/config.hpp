@@ -89,11 +89,13 @@ struct RuntimeConfig {
   float safeConfidence = 0.25F;
 
   std::optional<std::string> realsenseSerial;
-  int cameraWidth = 1280;
-  int cameraHeight = 720;
-  // The D455 stream is shared with navigation. Keep the capture rate at the
-  // navigation-safe 15 FPS unless a deployment explicitly requests another
-  // rate.
+  // Match the navigation camera profile to reduce USB/CPU load when insight
+  // opens the D455 directly. The model still letterboxes this frame to its
+  // fixed YOLO input shape (640x640).
+  int cameraWidth = 848;
+  int cameraHeight = 480;
+  // Keep the capture rate at the navigation-safe 15 FPS unless a deployment
+  // explicitly requests another rate.
   int cameraFps = 15;
   int videoStride = 1;
   bool paceVideo = true;
@@ -130,5 +132,10 @@ std::string commandLineHelp();
 std::string displayPath(const fs::path& path);
 bool isRealSenseSource(const std::string& value);
 bool isVideoSource(const std::string& value);
+
+// "ros:<topic>" subscribes to a ROS 2 sensor_msgs/Image topic instead of
+// opening the camera directly, letting the navigation stack own the D455.
+bool isRosSource(const std::string& value);
+std::string rosTopicName(const std::string& value);
 
 }  // namespace insight_cup

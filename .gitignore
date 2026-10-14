@@ -23,20 +23,51 @@ env/
 
 # C/C++ and CMake build artifacts
 build/
+build-*/
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+CTestTestfile.cmake
 Makefile
+build.ninja
+.ninja_deps
+.ninja_log
 compile_commands.json
 Testing/
 *.o
 *.obj
+*.lo
 *.a
+*.lib
 *.so
 *.dylib
 *.dll
 *.exe
+*.pdb
+
+# ROS / catkin / colcon build and workspace artifacts
+devel/
+devel_isolated/
+build_isolated/
+install/
+install_isolated/
+log/
+.catkin_tools/
+.colcon/
+.ros/
+
+# ROS 1 / ROS 2 recordings (including compressed and split bags)
+*.bag
+*.bag.*
+*.db3
+*.db3-*
+*.db3.*
+*.mcap
+*.mcap.*
+rosbag/
+rosbags/
+rosbag2_*/
 
 # Runtime outputs and generated artifacts
 outputs/

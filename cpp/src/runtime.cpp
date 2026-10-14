@@ -20,6 +20,10 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 #include <openssl/evp.h>
+#if INSIGHT_CUP_HAS_ROS2
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/image.hpp>
+#endif
 
 #if INSIGHT_CUP_HAS_REALSENSE
 #include <librealsense2/rs.hpp>
@@ -52,15 +56,15 @@ bool isCameraIndexSource(const std::string& source) {
 }
 
 bool isTemporalSource(const std::string& source) {
-  return isRealSenseSource(source) || isCameraIndexSource(source) ||
-         isVideoSource(source);
+  return isRealSenseSource(source) || isRosSource(source) ||
+         isCameraIndexSource(source) || isVideoSource(source);
 }
 
-// Calibrated YOLO rectangle-area floors for the current D455 setup.  These
-// are intentionally separate because knife boxes are substantially smaller
-// than person boxes in the same 1280x720 image.
-constexpr double kStage2PersonMinAreaPx = 11400.0;
-constexpr double kStage2KnifeMinAreaPx = 3233.0;
+// Calibrated YOLO rectangle-area floors for the D455's original 1280x720
+// stream, rescaled to the current 848x480 stream.  These remain separate
+// because knife boxes are substantially smaller than person boxes.
+constexpr double kStage2PersonMinAreaPx = 5035.0;
+constexpr double kStage2KnifeMinAreaPx = 1428.0;
 
 double stage2MinAreaPx(const std::string& majorClass) {
   if (majorClass == "f") {
@@ -87,8 +91,8 @@ bool looksLikeLocalPath(const std::string& source) {
 }
 
 void validateLocalSourcePath(const std::string& source) {
-  if (isRealSenseSource(source) || isCameraIndexSource(source) ||
-      !looksLikeLocalPath(source)) {
+  if (isRealSenseSource(source) || isRosSource(source) ||
+      isCameraIndexSource(source) || !looksLikeLocalPath(source)) {
     return;
   }
   std::error_code error;
@@ -435,18 +439,9 @@ void RecognitionRuntime::loadStage1Roi() {
   obstacleRoiForDisplay_.clear();
   stage1RoiConfigPath_.clear();
   stage2ReferenceAreaPx_ = 0.0;
+  stage2PersonReferenceAreaPx_ = 0.0;
+  stage2KnifeReferenceAreaPx_ = 0.0;
   stage1RoiConfigured_ = false;
-
-  if (!config_.stage1RoiEnabled) {
-    stage1RoiConfigured_ = true;
-    modelMetadata_["stage1_roi"] = {
-        {"enabled", false},
-        {"configured", false},
-        {"reference_area_px", nullptr},
-        {"area_tolerance", config_.stage2AreaTolerance}};
-    logger_.info("STAGE1 ROI disabled; using the full camera frame");
-    return;
-  }
 
   const fs::path requested = config_.stage1RoiConfig;
   std::vector<fs::path> candidates;
@@ -495,6 +490,8 @@ void RecognitionRuntime::loadStage1Roi() {
 
       std::vector<cv::Point2f> roi;
       std::vector<double> referenceAreas;
+      std::vector<double> personReferenceAreas;
+      std::vector<double> knifeReferenceAreas;
       if (payload.value("schema", std::string()) ==
           "insight.stage1_roi.v1") {
         roi = calibrationPolygon(payload.value("roi_polygon", json()));
@@ -503,8 +500,27 @@ void RecognitionRuntime::loadStage1Roi() {
         }
         obstacleRoiForDisplay_ =
             calibrationPolygon(payload.value("obstacle_roi", json()));
+        const auto regions =
+            payload.value("reference_regions", json::array());
+        if (regions.is_array()) {
+          for (const auto& region : regions) {
+            const auto savedArea = region.value("area_px2", json());
+            if (!savedArea.is_number() || savedArea.get<double>() <= 0.0) {
+              continue;
+            }
+            const double area = savedArea.get<double>();
+            referenceAreas.push_back(area);
+            const std::string majorClass =
+                region.value("major_class", region.value("kind", ""));
+            if (majorClass == "f" || majorClass.rfind("f", 0) == 0) {
+              personReferenceAreas.push_back(area);
+            } else if (majorClass == "k" || majorClass.rfind("k", 0) == 0) {
+              knifeReferenceAreas.push_back(area);
+            }
+          }
+        }
         const auto values = payload.value("reference_areas_px", json::array());
-        if (values.is_array()) {
+        if (values.is_array() && referenceAreas.empty()) {
           for (const auto& value : values) {
             if (value.is_number() && value.get<double>() > 0.0) {
               referenceAreas.push_back(value.get<double>());
@@ -520,6 +536,7 @@ void RecognitionRuntime::loadStage1Roi() {
           int id = 0;
           std::vector<cv::Point2f> polygon;
           double areaPx = 0.0;
+          std::string majorClass;
         };
         std::vector<Candidate> boxes;
         for (const auto& value : values) {
@@ -533,7 +550,15 @@ void RecognitionRuntime::loadStage1Roi() {
             areaPx = savedArea.get<double>();
           }
           if (areaPx > 0.0) {
-            boxes.push_back({value.value("id", 0), polygon, areaPx});
+            std::string majorClass = value.value("kind", "");
+            if (majorClass.empty()) {
+              const std::string label = value.value("yolo_label", "");
+              if (!label.empty() && (label.front() == 'f' || label.front() == 'k')) {
+                majorClass = label.substr(0, 1);
+              }
+            }
+            boxes.push_back({value.value("id", 0), polygon, areaPx,
+                             std::move(majorClass)});
           }
         }
         if (boxes.empty()) {
@@ -555,6 +580,11 @@ void RecognitionRuntime::loadStage1Roi() {
               [id](const Candidate& value) { return value.id == id; });
           if (found != boxes.end() && found != roiIterator) {
             referenceAreas.push_back(found->areaPx);
+            if (found->majorClass == "f") {
+              personReferenceAreas.push_back(found->areaPx);
+            } else if (found->majorClass == "k") {
+              knifeReferenceAreas.push_back(found->areaPx);
+            }
             selectedIds.insert(found->id);
           }
         }
@@ -574,6 +604,11 @@ void RecognitionRuntime::loadStage1Roi() {
               break;
             }
             referenceAreas.push_back(value->areaPx);
+            if (value->majorClass == "f") {
+              personReferenceAreas.push_back(value->areaPx);
+            } else if (value->majorClass == "k") {
+              knifeReferenceAreas.push_back(value->areaPx);
+            }
           }
         }
       }
@@ -589,6 +624,18 @@ void RecognitionRuntime::loadStage1Roi() {
       }
       stage1Roi_ = std::move(roi);
       stage2ReferenceAreaPx_ = sum / referenceAreas.size();
+      if (!personReferenceAreas.empty()) {
+        stage2PersonReferenceAreaPx_ =
+            std::accumulate(personReferenceAreas.begin(),
+                            personReferenceAreas.end(), 0.0) /
+            personReferenceAreas.size();
+      }
+      if (!knifeReferenceAreas.empty()) {
+        stage2KnifeReferenceAreaPx_ =
+            std::accumulate(knifeReferenceAreas.begin(),
+                            knifeReferenceAreas.end(), 0.0) /
+            knifeReferenceAreas.size();
+      }
       stage1RoiConfigPath_ = candidatePath;
       stage1RoiConfigured_ = true;
       json polygon = json::array();
@@ -596,8 +643,9 @@ void RecognitionRuntime::loadStage1Roi() {
         polygon.push_back({point.x, point.y});
       }
       modelMetadata_["stage1_roi"] = {
-          {"enabled", true},
+          {"enabled", config_.stage1RoiEnabled},
           {"configured", true},
+          {"display_only", !config_.stage1RoiEnabled},
           {"config_path", displayPath(candidatePath)},
           {"polygon", polygon},
           {"obstacle_roi", [&] {
@@ -608,6 +656,12 @@ void RecognitionRuntime::loadStage1Roi() {
              return value;
            }()},
           {"reference_area_px", stage2ReferenceAreaPx_},
+          {"person_reference_area_px", stage2PersonReferenceAreaPx_ > 0.0
+                                           ? json(stage2PersonReferenceAreaPx_)
+                                           : json(nullptr)},
+          {"knife_reference_area_px", stage2KnifeReferenceAreaPx_ > 0.0
+                                          ? json(stage2KnifeReferenceAreaPx_)
+                                          : json(nullptr)},
           {"reference_regions", referenceAreas.size()},
           {"area_tolerance", config_.stage2AreaTolerance}};
       logger_.info("READY module=stage1_roi path=" +
@@ -615,7 +669,20 @@ void RecognitionRuntime::loadStage1Roi() {
                    std::to_string(stage1Roi_.size()) + " reference_area_px=" +
                    fixed(stage2ReferenceAreaPx_, 2) + " tolerance=" +
                    fixed(config_.stage2AreaTolerance, 2) +
-                   " person_min_area_px=11400 knife_min_area_px=3233");
+                   " person_min_area_px=" +
+                   fixed(stage2PersonReferenceAreaPx_ > 0.0
+                             ? stage2PersonReferenceAreaPx_ *
+                                   (1.0 - config_.stage2AreaTolerance)
+                             : kStage2PersonMinAreaPx,
+                         0) +
+                   " knife_min_area_px=" +
+                   fixed(stage2KnifeReferenceAreaPx_ > 0.0
+                             ? stage2KnifeReferenceAreaPx_ *
+                                   (1.0 - config_.stage2AreaTolerance)
+                             : kStage2KnifeMinAreaPx,
+                         0) +
+                   (config_.stage1RoiEnabled ? "" :
+                                                " (display-only; gating disabled)"));
       return;
     } catch (const std::exception& exception) {
       logger_.warning("STAGE1 ROI config ignored path=" +
@@ -625,13 +692,18 @@ void RecognitionRuntime::loadStage1Roi() {
   }
 
   modelMetadata_["stage1_roi"] = {
-      {"enabled", true},
+      {"enabled", config_.stage1RoiEnabled},
       {"configured", false},
+      {"display_only", !config_.stage1RoiEnabled},
       {"config_path", displayPath(requested)},
       {"reference_area_px", nullptr},
       {"area_tolerance", config_.stage2AreaTolerance}};
-  logger_.warning("STAGE1 ROI unavailable; person/knife stage 2 is gated until "
-                  "#7A plus #1..#4 calibration is available");
+  if (config_.stage1RoiEnabled) {
+    logger_.warning("STAGE1 ROI unavailable; person/knife stage 2 is gated until "
+                    "#7A plus reference calibration is available");
+  } else {
+    logger_.info("STAGE1 ROI disabled; using the full camera frame");
+  }
 }
 
 void RecognitionRuntime::run() {
@@ -737,7 +809,8 @@ void RecognitionRuntime::loadModels() {
   bool cameraIndex = !config_.source.empty() &&
                      std::all_of(config_.source.begin(), config_.source.end(),
                                  [](unsigned char value) { return std::isdigit(value); });
-  const bool asynchronous = isRealSenseSource(config_.source) || cameraIndex ||
+  const bool asynchronous = isRealSenseSource(config_.source) ||
+                            isRosSource(config_.source) || cameraIndex ||
                             isVideoSource(config_.source);
   scheduler_ = std::make_unique<AsyncStage2Scheduler>(
       config_.stage2RefreshFrames, config_.stage2StableRefreshFrames,
@@ -775,6 +848,10 @@ void RecognitionRuntime::loadModels() {
 void RecognitionRuntime::runSource() {
   if (isRealSenseSource(config_.source)) {
     runRealSense();
+    return;
+  }
+  if (isRosSource(config_.source)) {
+    runRosSubscriber();
     return;
   }
   const fs::path source(config_.source);
@@ -943,6 +1020,183 @@ void RecognitionRuntime::runRealSense() {
 #else
   throw std::runtime_error(
       "This C++ build does not include Intel RealSense support");
+#endif
+}
+
+void RecognitionRuntime::runRosSubscriber() {
+#if INSIGHT_CUP_HAS_ROS2
+  const std::string topic = rosTopicName(config_.source);
+  const auto context = rclcpp::contexts::get_global_default_context();
+  if (!context->is_valid()) {
+    rclcpp::init(0, nullptr);
+  }
+  auto node = std::make_shared<rclcpp::Node>("insight_cup_ros_source");
+
+  struct FrameSlot {
+    std::mutex mutex;
+    std::condition_variable signal;
+    cv::Mat frame;
+    std::optional<double> stampMs;
+    bool fresh = false;
+  };
+  FrameSlot slot;
+
+  std::string encoding;
+  int64_t frameCounter = 0;
+  auto subscription = node->create_subscription<sensor_msgs::msg::Image>(
+      topic, rclcpp::SensorDataQoS(),
+      [&](sensor_msgs::msg::Image::SharedPtr msg) {
+        if (msg->width == 0 || msg->height == 0 || msg->data.empty()) {
+          return;
+        }
+        const std::string enc = msg->encoding;
+        if (enc != "rgb8" && enc != "bgr8") {
+          logger_.warning("Unsupported ROS image encoding on " + topic +
+                          ": " + enc);
+          return;
+        }
+        cv::Mat wrapped(static_cast<int>(msg->height),
+                        static_cast<int>(msg->width), CV_8UC3,
+                        const_cast<uint8_t*>(msg->data.data()),
+                        static_cast<std::size_t>(msg->step));
+        cv::Mat converted;
+        if (enc == "rgb8") {
+          cv::cvtColor(wrapped, converted, cv::COLOR_RGB2BGR);
+        } else {
+          converted = wrapped.clone();
+        }
+        // ROI polygons, pixel-area gates, and obstacle calibration are all
+        // expressed in the configured camera geometry (848x480 by default).
+        // A ROS bag can carry the same 16:9 stream at 1280x720; normalize it
+        // at the source boundary so the UI overlay and the formal pipeline
+        // consume exactly the same calibrated pixel coordinates.
+        if (converted.cols != config_.cameraWidth ||
+            converted.rows != config_.cameraHeight) {
+          cv::Mat normalized;
+          cv::resize(converted, normalized,
+                     cv::Size(config_.cameraWidth, config_.cameraHeight), 0.0,
+                     0.0, cv::INTER_AREA);
+          if (!rosSourceResizeLogged_) {
+            logger_.warning(
+                "SOURCE ROS frame normalized from " +
+                std::to_string(converted.cols) + "x" +
+                std::to_string(converted.rows) + " to " +
+                std::to_string(config_.cameraWidth) + "x" +
+                std::to_string(config_.cameraHeight) +
+                " to match pixel calibration and ROI");
+            rosSourceResizeLogged_ = true;
+          }
+          converted = std::move(normalized);
+        }
+        std::optional<double> stampMs;
+        const double seconds =
+            msg->header.stamp.sec + 1e-9 * msg->header.stamp.nanosec;
+        if (seconds > 0.0) {
+          stampMs = 1000.0 * seconds;
+        }
+        {
+          std::lock_guard<std::mutex> lock(slot.mutex);
+          encoding = enc;
+          slot.frame = std::move(converted);
+          slot.stampMs = stampMs;
+          slot.fresh = true;
+        }
+        slot.signal.notify_one();
+      });
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node);
+  std::thread spinner([&executor]() { executor.spin(); });
+
+  logger_.info("SOURCE type=ros topic=/" + topic + " fps=" +
+               std::to_string(config_.cameraFps));
+  sourceFps_ = static_cast<double>(config_.cameraFps);
+  scheduler_->setFrameRate(sourceFps_);
+
+  cv::VideoWriter writer;
+  int64_t processedIndex = 0;
+  bool writerOpened = false;
+  std::unique_lock<std::mutex> lock(slot.mutex);
+  try {
+    while (state_.waitUntilRunnable()) {
+      if (!slot.signal.wait_for(lock, std::chrono::seconds(3),
+                                [&]() { return slot.fresh; })) {
+        logger_.warning("No frames received on /" + topic +
+                        " within 3 s; is the camera publisher running?");
+        continue;
+      }
+      const cv::Mat frame = slot.frame;
+      const std::optional<double> stampMs = slot.stampMs;
+      slot.fresh = false;
+      lock.unlock();
+
+      state_.setSourceInfo({
+          {"type", "ros"},
+          {"topic", topic},
+          {"encoding", encoding},
+          {"width", frame.cols},
+          {"height", frame.rows},
+          {"fps", config_.cameraFps},
+          {"total_frames", 0},
+          {"video_stride", config_.videoStride},
+      });
+      if (!writerOpened && config_.saveVideo) {
+        const fs::path output = sessionDirectory_ / "annotated.mp4";
+        writer.open(output.string(),
+                    cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
+                    std::max(1.0, static_cast<double>(config_.cameraFps) /
+                                      config_.videoStride),
+                    frame.size());
+        if (!writer.isOpened()) {
+          throw std::runtime_error("Could not write video: " +
+                                   displayPath(output));
+        }
+        writerOpened = true;
+        mediaOutputs_.push_back(displayPath(output));
+      }
+      const int64_t currentIndex = frameCounter++;
+      if (currentIndex % config_.videoStride != 0) {
+        lock.lock();
+        continue;
+      }
+      const cv::Mat annotated = processFrame(
+          frame, static_cast<int>(currentIndex),
+          static_cast<int>(processedIndex), "ros:" + topic, stampMs);
+      if (writer.isOpened()) {
+        writer.write(annotated);
+      }
+      ++processedIndex;
+      if (config_.maxFrames &&
+          processedIndex >= static_cast<std::size_t>(*config_.maxFrames)) {
+        break;
+      }
+      lock.lock();
+    }
+  } catch (...) {
+    if (lock.owns_lock()) {
+      lock.unlock();
+    }
+    executor.cancel();
+    if (spinner.joinable()) {
+      spinner.join();
+    }
+    writer.release();
+    throw;
+  }
+  if (lock.owns_lock()) {
+    lock.unlock();
+  }
+  executor.cancel();
+  if (spinner.joinable()) {
+    spinner.join();
+  }
+  writer.release();
+  if (processedIndex == 0 && !state_.stopRequested()) {
+    throw std::runtime_error("No frames received on ROS image topic: /" +
+                             topic);
+  }
+#else
+  throw std::runtime_error("This C++ build does not include ROS 2 support");
 #endif
 }
 
@@ -1186,6 +1440,17 @@ DetectionFrame RecognitionRuntime::trackYoloDetections(
     matchedTracks.insert(pair.trackIndex);
     auto& track = stage1Tracks_[pair.trackIndex];
     DetectedRegion region = detectionFrame.regions[pair.regionIndex];
+    const Box previousBox = track.region.handoff.bbox;
+    const Box currentBox = region.handoff.bbox;
+    const double previousArea = static_cast<double>(previousBox.width()) *
+                                static_cast<double>(previousBox.height());
+    const double currentArea = static_cast<double>(currentBox.width()) *
+                              static_cast<double>(currentBox.height());
+    const double areaRatio = previousArea > 0.0
+                                 ? currentArea / previousArea
+                                 : 0.0;
+    const bool stableBox = areaRatio >= 0.65 && areaRatio <= 1.35 &&
+                           bboxIou(previousBox, currentBox) >= 0.25F;
     const double frameGap = normalizedFrameGap(
         std::max(1, frameIndex - track.lastYoloFrame));
     const auto current = boxValues(region.handoff.bbox);
@@ -1200,7 +1465,11 @@ DetectionFrame RecognitionRuntime::trackYoloDetections(
     track.lastYoloFrame = frameIndex;
     track.missedYoloFrames = 0;
     ++track.hits;
-    if (track.hits >= requiredStage1Confirmations(config_)) {
+    track.stableBoxHits = stableBox ? track.stableBoxHits + 1 : 1;
+    const int requiredHits = std::max(requiredStage1Confirmations(config_),
+                                      region.handoff.majorClass == "k" ? 3 : 1);
+    if (track.hits >= requiredHits &&
+        (region.handoff.majorClass != "k" || track.stableBoxHits >= 3)) {
       filtered.regions.push_back(std::move(region));
     }
   }
@@ -1223,8 +1492,10 @@ DetectionFrame RecognitionRuntime::trackYoloDetections(
     track.trackId = nextStage1TrackId_++;
     track.region = region;
     track.lastYoloFrame = frameIndex;
+    track.stableBoxHits = 1;
     stage1Tracks_.push_back(std::move(track));
-    if (requiredStage1Confirmations(config_) <= 1) {
+    if (requiredStage1Confirmations(config_) <= 1 &&
+        region.handoff.majorClass != "k") {
       filtered.regions.push_back(std::move(region));
     }
   }
@@ -1251,6 +1522,9 @@ DetectionFrame RecognitionRuntime::predictTrackedDetections(
   int detectionIndex = 0;
   for (const auto& track : stage1Tracks_) {
     if (track.hits < requiredStage1Confirmations(config_)) {
+      continue;
+    }
+    if (track.region.handoff.majorClass == "k" && track.stableBoxHits < 3) {
       continue;
     }
     const int frameGap = frameIndex - track.lastYoloFrame;
@@ -1411,7 +1685,12 @@ bool RecognitionRuntime::stage2AreaEligible(const DetectedRegion& region) const 
   }
   const double area = static_cast<double>(region.handoff.bbox.width()) *
                       static_cast<double>(region.handoff.bbox.height());
-  const double lower = stage2MinAreaPx(region.handoff.majorClass);
+  const double reference = region.handoff.majorClass == "f"
+                               ? stage2PersonReferenceAreaPx_
+                               : stage2KnifeReferenceAreaPx_;
+  const double lower = reference > 0.0
+                           ? reference * (1.0 - config_.stage2AreaTolerance)
+                           : stage2MinAreaPx(region.handoff.majorClass);
   return lower > 0.0 && area >= lower;
 }
 
@@ -1513,9 +1792,19 @@ cv::Mat RecognitionRuntime::processFrame(
                             std::max(24, anchor.y - 8)),
                   cv::FONT_HERSHEY_SIMPLEX, 0.55, color, 2, cv::LINE_AA);
     };
-    if (config_.stage1RoiEnabled && stage1RoiConfigured_) {
+    if (stage1RoiConfigured_) {
+      const double personFloor = stage2PersonReferenceAreaPx_ > 0.0
+                                     ? stage2PersonReferenceAreaPx_ *
+                                           (1.0 - config_.stage2AreaTolerance)
+                                     : kStage2PersonMinAreaPx;
+      const double knifeFloor = stage2KnifeReferenceAreaPx_ > 0.0
+                                    ? stage2KnifeReferenceAreaPx_ *
+                                          (1.0 - config_.stage2AreaTolerance)
+                                    : kStage2KnifeMinAreaPx;
       drawRoi(stage1Roi_, cv::Scalar(0, 220, 80),
-              "#7A PERSON/KNIFE ROI | F>=11400 K>=3233 PX2");
+              "#7A PERSON/KNIFE ROI | F>=" + fixed(personFloor, 0) +
+                  " K>=" + fixed(knifeFloor, 0) +
+                  (config_.stage1RoiEnabled ? " PX2" : " PX2 DISPLAY ONLY"));
     }
     const std::vector<cv::Point2f>* obstacleRoi = &obstacleRoiForDisplay_;
     if (safeMonitor_ && !safeMonitor_->obstacleRoi().empty()) {
@@ -1540,9 +1829,45 @@ cv::Mat RecognitionRuntime::processFrame(
   stage2Frame.inferenceMs = detectionFrame.inferenceMs;
   stage2Frame.ignoredClasses = detectionFrame.ignoredClasses;
   stage2Frame.regions.reserve(detectionFrame.regions.size());
+  // A person and a knife do not reach the camera at exactly the same pixel
+  // scale.  Use the calibrated lower bound as the primary trigger, but keep
+  // the companion class in the stage-2 frame when its live box is plausibly
+  // sized.  This prevents stopping on a valid person while dropping the
+  // slightly smaller knife before recognition and speech can run.
+  bool strictPersonReady = false;
+  bool strictKnifeReady = false;
+  for (const auto& region : detectionFrame.regions) {
+    if (region.handoff.majorClass != "f" && region.handoff.majorClass != "k") {
+      continue;
+    }
+    if (stage2AreaEligible(region)) {
+      if (region.handoff.majorClass == "f") strictPersonReady = true;
+      if (region.handoff.majorClass == "k") strictKnifeReady = true;
+    }
+  }
+  const auto companionAreaEligible = [&](const DetectedRegion& region) {
+    if ((region.handoff.majorClass != "f" &&
+         region.handoff.majorClass != "k") || !stage1RoiConfigured_) {
+      return false;
+    }
+    const double reference = region.handoff.majorClass == "f"
+                                 ? stage2PersonReferenceAreaPx_
+                                 : stage2KnifeReferenceAreaPx_;
+    if (reference <= 0.0) return false;
+    const double area = static_cast<double>(region.handoff.bbox.width()) *
+                        static_cast<double>(region.handoff.bbox.height());
+    // Broad companion window: the strict class still controls entry, while
+    // the second class may be smaller/larger because of pose and occlusion.
+    return area >= reference * 0.35 && area <= reference * 2.25;
+  };
   for (const auto& region : detectionFrame.regions) {
     state_.recordDetection(region.handoff.majorClass);
-    if (stage2AreaEligible(region)) {
+    const bool strictReady = stage2AreaEligible(region);
+    const bool companionReady = (region.handoff.majorClass == "f" &&
+                                 strictKnifeReady) ||
+                                (region.handoff.majorClass == "k" &&
+                                 strictPersonReady);
+    if (strictReady || (companionReady && companionAreaEligible(region))) {
       stage2Frame.regions.push_back(region);
     } else {
       if (!annotated.empty()) {
@@ -1717,19 +2042,16 @@ cv::Mat RecognitionRuntime::processFrame(
   // not immediately overwrite it with the ordinary empty-target aggregate
   // message below; that made /insight appear to lose the result to subscribers.
   bool publishedTargetEventThisFrame = false;
-  const int personLabelCount = static_cast<int>(std::count_if(
-      labels.begin(), labels.end(), [](const std::string& label) {
-        return !label.empty() && label.front() == 'f';
-      }));
-  const int knifeLabelCount = static_cast<int>(std::count_if(
-      labels.begin(), labels.end(), [](const std::string& label) {
-        return !label.empty() && label.front() == 'k';
-      }));
-  const bool completePersonKnifePair =
-      labels.size() == 2 && personLabelCount == 1 && knifeLabelCount == 1;
+  // A confirmed person is already a reportable inspection target.  The old
+  // implementation required exactly one person and one knife before it
+  // emitted /insight, which meant that a correctly recognized person alone
+  // was visible on /vision but could never reach the navigation speech path.
+  // Keep the temporal confirmation below as the false-positive guard, while
+  // allowing one or more stable person/knife labels in the event.
+  const bool hasStableInspectionTarget = !labels.empty();
 
   if (inspectionHoldActive_ && !inspectionReported_) {
-    if (!completePersonKnifePair) {
+    if (!hasStableInspectionTarget) {
       inspectionStableFrames_ = 0;
       inspectionStableLabels_.clear();
     } else {

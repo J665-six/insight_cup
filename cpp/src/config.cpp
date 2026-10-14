@@ -89,7 +89,7 @@ bool isRealSenseSource(const std::string& value) {
 }
 
 bool isVideoSource(const std::string& value) {
-  if (isRealSenseSource(value) ||
+  if (isRealSenseSource(value) || isRosSource(value) ||
       (!value.empty() &&
        std::all_of(value.begin(), value.end(), [](unsigned char character) {
          return std::isdigit(character);
@@ -102,6 +102,18 @@ bool isVideoSource(const std::string& value) {
   std::transform(extension.begin(), extension.end(), extension.begin(),
                  [](unsigned char character) { return std::tolower(character); });
   return extensions.count(extension) != 0;
+}
+
+bool isRosSource(const std::string& value) {
+  return value.rfind("ros:", 0) == 0;
+}
+
+std::string rosTopicName(const std::string& value) {
+  std::string topic = value.substr(4);
+  while (!topic.empty() && topic.front() == '/') {
+    topic.erase(topic.begin());
+  }
+  return topic.empty() ? std::string("camera/camera/color/image_raw") : topic;
 }
 
 std::string displayPath(const fs::path& path) {
@@ -527,7 +539,7 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
       // frame. This keeps the full-detector cadence at 15 FPS, matching the
       // previous 30 FPS camera mode with a stride of two.
       config.yoloFrameStride =
-          (isRealSenseSource(config.source) ||
+          (isRealSenseSource(config.source) || isRosSource(config.source) ||
            (!config.source.empty() &&
             std::all_of(config.source.begin(), config.source.end(),
                         [](unsigned char value) { return std::isdigit(value); }))) &&
@@ -560,7 +572,7 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
     }
   }
 
-  if (!isRealSenseSource(config.source) &&
+  if (!isRealSenseSource(config.source) && !isRosSource(config.source) &&
       !std::all_of(config.source.begin(), config.source.end(),
                    [](unsigned char character) { return std::isdigit(character); })) {
     const fs::path candidate = expandPath(config.source);
@@ -579,7 +591,8 @@ Usage:
   ./start.sh [options]
 
 Source and output:
-  --source VALUE                 realsense, camera index, video, image, or directory
+  --source VALUE                 realsense, camera index, video, image, directory,
+                                 or ros:<topic> (ROS 2 sensor_msgs/Image topic)
   --session-id NAME              output session name
   --output-root PATH             session output root
   --max-frames N                 stop after N processed frames
@@ -602,7 +615,7 @@ Models:
 Runtime:
   --profile MODE                 custom, competition, or ui-recording
   --stage1-confirmations N       YOLO detections required before stage 2 (default 2)
-  --inspection-stable-frames N   matching f+k frames required for /insight (default 10)
+  --inspection-stable-frames N   matching target frames required for /insight (default 10)
   --stage1-roi-config PATH       #7A ROI and #1..#4 pixel-area calibration JSON
   --no-stage1-roi                 disable #7A recognition ROI gating
   --stage2-area-tolerance VALUE  relative area tolerance around #1..#4 mean (default 0.30)

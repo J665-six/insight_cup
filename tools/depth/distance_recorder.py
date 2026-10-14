@@ -21,8 +21,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WINDOW_NAME = "D455 distance and region recorder"
 PREVIEW_WIDTH = 960
 SIDEBAR_WIDTH = 430
-DEFAULT_COLOR_WIDTH = 1280
-DEFAULT_COLOR_HEIGHT = 720
+# The RK3588 navigation and recognition pipeline both use the D455
+# 848x480@15 stream.  Keep the recorder on the same geometry by default so
+# calibration clicks and pixel-area thresholds can be used directly by the
+# runtime without an additional resize or coordinate conversion.
+DEFAULT_COLOR_WIDTH = 848
+DEFAULT_COLOR_HEIGHT = 480
 DEFAULT_DEPTH_WIDTH = 848
 DEFAULT_DEPTH_HEIGHT = 480
 DEFAULT_YOLO_WEIGHTS = PROJECT_ROOT / "models" / "yolo" / "best.pt"
@@ -78,7 +82,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=Path,
-        help="JSON output path (default: outputs/distance/distance_TIMESTAMP.json)",
+        help="JSON output path (default: outputs/distance/calibration_848x480_TIMESTAMP.json)",
     )
     parser.add_argument(
         "--yolo", action="store_true",
@@ -1113,7 +1117,7 @@ def save_report(
 
 def default_output_path() -> Path:
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return PROJECT_ROOT / "outputs" / "distance" / f"distance_{stamp}.json"
+    return PROJECT_ROOT / "outputs" / "distance" / f"calibration_848x480_{stamp}.json"
 
 
 def main() -> int:
