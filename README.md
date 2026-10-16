@@ -15,6 +15,25 @@ source /home/j/Public-Safety-Event-/install/setup.bash
 正式识别默认使用 Intel RealSense D455 的 `848x480@15 FPS` 彩色画面，
 与导航的相机配置一致；YOLO 内部仍使用 `640x640` 输入。
 
+## D455 红外双目深度测距
+
+原像素测距完整保留，默认仍为 `--safe-distance-mode pixel`。
+使用 D455 红外双目计算的深度（不是红外图亮度），启动：
+
+```bash
+cd /home/j/insight_cup
+source /opt/ros/humble/setup.bash
+source /home/j/Public-Safety-Event-/install/setup.bash
+./start.sh --profile ui-recording --source realsense --provider auto --safe-distance-mode depth --port 7860
+```
+
+浏览器打开 `http://127.0.0.1:7860`。停车/继续服务仍按下文终端 A 启动。
+程序同步开启 `848x480` 深度流，对齐到彩色画面，取障碍物框中央有效深度的中位数，
+输出沿相机前方 Z 轴的厘米距离；保留原 ROI 和时间平滑，深度距离不限制在原标定的 20–100 cm。
+无有效深度时不回退像素估距，本帧不报告有效障碍物距离。
+此模式要求程序直接使用 `--source realsense`，相机不能同时被其他进程独占。
+切回原版只需将 `depth` 改成 `pixel`，原标定文件保持不变。
+
 ## 正式 UI 启动
 
 本机测试需要三个终端。终端 A 启动假停车/继续服务，终端 B 启动正式 UI 识别程序，终端 C 查看服务和话题。

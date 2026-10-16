@@ -82,6 +82,7 @@ struct RuntimeConfig {
   // Obstacle safety monitor. It reads the polygon calibration saved by the
   // distance tool and publishes the current front obstacle state on /safe.
   bool safeEnabled = true;
+  std::string safeDistanceMode = "pixel";
   fs::path safeZoneConfig = fs::path(INSIGHT_CUP_PROJECT_ROOT) /
                             "outputs/distance/obstacle_distance_new.json";
   // Kept for manifest/API compatibility; obstacle confirmation is immediate.

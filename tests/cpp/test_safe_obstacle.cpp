@@ -154,10 +154,29 @@ void testSingleDistanceLogMapsCentersToDistances() {
           "obstacle center must map to the nearest #4A 60 cm region");
 }
 
+void testDepthDistance() {
+  const std::string path = "/tmp/insight_safe_depth_test.json";
+  writeConfig(path);
+  insight_cup::RuntimeConfig config;
+  config.safeZoneConfig = path;
+  config.safeDistanceMode = "depth";
+  insight_cup::Logger logger;
+  insight_cup::SafeObstacleMonitor monitor(config, logger);
+  auto read = [](const insight_cup::Box&) -> std::optional<int> { return 237; };
+  auto state = monitor.update(detectionAt(50, 80), {200, 200}, 0, 0.0, read);
+  require(state.obstacle && state.distanceCm == 237,
+          "depth must override pixel calibration without clamping to 100 cm");
+  state = monitor.update(detectionAt(150, 80), {200, 200}, 1, 66.0, read);
+  require(!state.obstacle, "depth must respect obstacle ROI");
+  state = monitor.update(detectionAt(50, 80), {200, 200}, 2, 132.0);
+  require(!state.obstacle, "missing depth must not fall back to pixels");
+}
+
 }  // namespace
 
 int main() {
   try {
+    testDepthDistance();
     testImmediateObstacleAndDistance();
     testDistanceLogUsesTaggedObstacleRoi();
     testDistanceLogRejectsUnTaggedObstacleRoi();

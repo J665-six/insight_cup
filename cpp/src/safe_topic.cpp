@@ -4,6 +4,32 @@
 
 namespace insight_cup {
 
+namespace {
+
+constexpr int kNavigationObstacleMinDistanceCm = 40;
+constexpr int kNavigationObstacleMaxDistanceCm = 50;
+
+SafeObstacleState stateForNavigation(const SafeObstacleState& state) {
+  if (!state.obstacle ||
+      (state.distanceCm >= kNavigationObstacleMinDistanceCm &&
+       state.distanceCm <= kNavigationObstacleMaxDistanceCm)) {
+    return state;
+  }
+
+  SafeObstacleState filtered = state;
+  filtered.obstacle = false;
+  filtered.status = "clear";
+  filtered.distanceCm = 0;
+  filtered.distanceM = 0.0;
+  filtered.stableSeconds = 0.0;
+  filtered.stableFrames = 0;
+  filtered.confidence = 0.0F;
+  filtered.bbox = {};
+  return filtered;
+}
+
+}  // namespace
+
 SafeTopic::SafeTopic() {
   const auto context = rclcpp::contexts::get_global_default_context();
   if (!context->is_valid()) {
@@ -34,7 +60,7 @@ void SafeTopic::publish(const SafeObstacleState& state) {
   std_msgs::msg::String message;
   // Keep each ROS String sample on one line; YAML echo escapes embedded
   // newlines in multi-line JSON as literal "\\n" sequences.
-  message.data = state.toJson().dump();
+  message.data = stateForNavigation(state).toJson().dump();
   publisher_->publish(std::move(message));
 }
 

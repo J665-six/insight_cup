@@ -226,6 +226,8 @@ if(INSIGHT_CUP_HAS_REALSENSE)
   target_link_libraries(insight_cup_stereo_range PUBLIC
     realsense2::realsense2 ${OpenCV_LIBS})
 
+  target_link_libraries(insight-cup insight_cup_stereo_range)
+
   set(INSIGHT_CUP_YOLO_PREVIEW_SOURCES
     tools/depth/yolo_stereo_range_preview.cpp
     cpp/src/gallery.cpp

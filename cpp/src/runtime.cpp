@@ -27,6 +27,7 @@
 
 #if INSIGHT_CUP_HAS_REALSENSE
 #include <librealsense2/rs.hpp>
+#include "insight_cup/stereo_range.hpp"
 #endif
 
 namespace insight_cup {
@@ -65,6 +66,21 @@ bool isTemporalSource(const std::string& source) {
 // because knife boxes are substantially smaller than person boxes.
 constexpr double kStage2PersonMinAreaPx = 5035.0;
 constexpr double kStage2KnifeMinAreaPx = 1428.0;
+
+// Navigation enters obstacle avoidance from the authoritative /insight
+// message.  Only distances in this calibrated window should trigger that
+// mode; /safe continues to expose the complete safety-monitor state for
+// diagnostics.
+constexpr int kInsightObstacleMinDistanceCm = 40;
+constexpr int kInsightObstacleMaxDistanceCm = 50;
+
+bool insightObstacleDetected(const std::optional<SafeObstacleState>& state) {
+  if (!state || !state->obstacle) {
+    return false;
+  }
+  return state->distanceCm >= kInsightObstacleMinDistanceCm &&
+         state->distanceCm <= kInsightObstacleMaxDistanceCm;
+}
 
 double stage2MinAreaPx(const std::string& majorClass) {
   if (majorClass == "f") {
@@ -892,6 +908,12 @@ void RecognitionRuntime::runRealSense() {
   cameraConfig.enable_stream(RS2_STREAM_COLOR, config_.cameraWidth,
                              config_.cameraHeight, RS2_FORMAT_BGR8,
                              config_.cameraFps);
+  const bool useDepth = config_.safeDistanceMode == "depth";
+  rs2::align alignToColor(RS2_STREAM_COLOR);
+  if (useDepth) {
+    cameraConfig.enable_stream(RS2_STREAM_DEPTH, 848, 480,
+                               RS2_FORMAT_Z16, config_.cameraFps);
+  }
   rs2::pipeline_profile profile;
   try {
     profile = pipeline.start(cameraConfig);
@@ -965,6 +987,24 @@ void RecognitionRuntime::runRealSense() {
         }
         continue;
       }
+      if (useDepth) {
+        frames = alignToColor.process(frames);
+      }
+      const rs2::depth_frame depth = frames.get_depth_frame();
+      ObstacleDistanceReader depthReader;
+      if (useDepth && depth) {
+        depthReader = [&depth](const Box& box) -> std::optional<int> {
+          cv::Mat image(depth.get_height(), depth.get_width(), CV_16UC1,
+                        const_cast<void*>(depth.get_data()), depth.get_stride_in_bytes());
+          const auto intrinsics = depth.get_profile()
+              .as<rs2::video_stream_profile>().get_intrinsics();
+          const auto measurement = measureStereoRange(
+              image, cv::Rect(box.x1, box.y1, box.width(), box.height()),
+              depth.get_units(), intrinsics);
+          if (!measurement.valid) return std::nullopt;
+          return static_cast<int>(std::lround(measurement.zMeters * 100.0F));
+        };
+      }
       rs2::video_frame color = frames.get_color_frame();
       if (!color) {
         throw std::runtime_error("RealSense frameset has no color frame");
@@ -994,7 +1034,7 @@ void RecognitionRuntime::runRealSense() {
           wrapped, currentIndex, processedIndex, "realsense:" + serial,
           std::isfinite(color.get_timestamp())
               ? std::optional<double>(color.get_timestamp())
-              : std::nullopt);
+              : std::nullopt, depthReader);
       if (writer.isOpened()) {
         writer.write(annotated);
       }
@@ -1747,7 +1787,8 @@ void RecognitionRuntime::requestYoloOnUnstableResult(
 
 cv::Mat RecognitionRuntime::processFrame(
     const cv::Mat& frame, int frameIndex, int processedIndex,
-    const std::string& sourceLabel, std::optional<double> sourceTimeMs) {
+    const std::string& sourceLabel, std::optional<double> sourceTimeMs,
+    const ObstacleDistanceReader& depthReader) {
   if (!detector_ || !router_ || !scheduler_) {
     throw std::runtime_error("Models are not loaded");
   }
@@ -1761,11 +1802,12 @@ cv::Mat RecognitionRuntime::processFrame(
   std::optional<SafeObstacleState> safeState;
   if (safeMonitor_) {
     safeState = safeMonitor_->update(
-        detectionFrame, frame.size(), processedIndex, sourceTimeMs);
+        detectionFrame, frame.size(), processedIndex, sourceTimeMs, depthReader);
     if (safePublisher_) {
       safePublisher_(*safeState);
     }
   }
+  const bool insightObstacle = insightObstacleDetected(safeState);
   cv::Mat annotated;
   if (needsAnnotatedFrame) {
     annotated = frame.clone();
@@ -2079,9 +2121,9 @@ cv::Mat RecognitionRuntime::processFrame(
                                                 .time_since_epoch())
                                               .count())},
             {"obstacle_detected",
-             safeState ? safeState->obstacle : false},
+             insightObstacle},
             {"obstacle_distance_cm",
-             safeState && safeState->obstacle ? safeState->distanceCm : 0},
+             insightObstacle ? safeState->distanceCm : 0},
             {"target_detected", true},
             {"targets", targetLabels}};
         if (insightPublisher_) {
@@ -2132,9 +2174,9 @@ cv::Mat RecognitionRuntime::processFrame(
              std::chrono::milliseconds>(std::chrono::system_clock::now()
                                             .time_since_epoch())
                                           .count())},
-        {"obstacle_detected", safeState ? safeState->obstacle : false},
+        {"obstacle_detected", insightObstacle},
         {"obstacle_distance_cm",
-         safeState && safeState->obstacle ? safeState->distanceCm : 0},
+         insightObstacle ? safeState->distanceCm : 0},
         {"target_detected", false},
         {"targets", aggregateTargets}});
   }

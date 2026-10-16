@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <deque>
+#include <functional>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -30,6 +31,8 @@ struct SafeObstacleState {
   json toJson() const;
 };
 
+using ObstacleDistanceReader = std::function<std::optional<int>(const Box&)>;
+
 class SafeObstacleMonitor {
  public:
   SafeObstacleMonitor(const RuntimeConfig& config, Logger& logger);
@@ -39,7 +42,8 @@ class SafeObstacleMonitor {
 
   SafeObstacleState update(const DetectionFrame& frame, const cv::Size& frameSize,
                            int processedIndex,
-                           std::optional<double> sourceTimeMs);
+                           std::optional<double> sourceTimeMs,
+                           const ObstacleDistanceReader& depthReader = {});
   json metadata() const;
   const std::vector<cv::Point2f>& obstacleRoi() const { return obstacleRoi_; }
 

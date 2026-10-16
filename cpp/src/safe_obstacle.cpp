@@ -105,6 +105,9 @@ SafeObstacleMonitor::SafeObstacleMonitor(const RuntimeConfig& config,
                                          Logger& logger)
     : config_(config), logger_(logger) {
   loadConfiguration();
+  if (config_.safeDistanceMode == "depth") {
+    configured_ = obstacleRoi_.size() >= 3;
+  }
   lastState_.configured = configured_;
   lastState_.configPath = loadedConfigPath_.empty()
                               ? displayPath(config_.safeZoneConfig)
@@ -604,7 +607,8 @@ void SafeObstacleMonitor::resetCandidate() {
 
 SafeObstacleState SafeObstacleMonitor::update(
     const DetectionFrame& frame, const cv::Size& frameSize, int processedIndex,
-    std::optional<double> sourceTimeMs) {
+    std::optional<double> sourceTimeMs,
+    const ObstacleDistanceReader& depthReader) {
   SafeObstacleState state;
   state.configured = configured_;
   state.configPath = loadedConfigPath_.empty()
@@ -637,7 +641,14 @@ SafeObstacleState SafeObstacleMonitor::update(
         center.y >= frameSize.height) {
       continue;
     }
-    const auto distance = distanceForBox(region.handoff.bbox);
+    std::optional<int> distance;
+    if (config_.safeDistanceMode == "depth") {
+      if (depthReader && pointInPolygon(center, obstacleRoi_)) {
+        distance = depthReader(box);
+      }
+    } else {
+      distance = distanceForBox(box);
+    }
     if (!distance || !best || region.handoff.confidence > best->handoff.confidence) {
       if (distance) {
         best = &region;
@@ -697,8 +708,12 @@ SafeObstacleState SafeObstacleMonitor::update(
     *filteredDistanceCm_ +=
         kDistanceEmaAlpha * (medianDistance - *filteredDistanceCm_);
   }
-  candidateDistanceCm_ = static_cast<int>(std::lround(
-      std::clamp(*filteredDistanceCm_, 20.0, 100.0) / 5.0) * 5.0);
+  if (config_.safeDistanceMode == "depth") {
+    candidateDistanceCm_ = static_cast<int>(std::lround(*filteredDistanceCm_));
+  } else {
+    candidateDistanceCm_ = static_cast<int>(std::lround(
+        std::clamp(*filteredDistanceCm_, 20.0, 100.0) / 5.0) * 5.0);
+  }
 
   double stableSeconds = 0.0;
   bool usedSourceTimestamp = false;
@@ -767,6 +782,7 @@ json SafeObstacleMonitor::metadata() const {
                          {"vertical", samplesToJson(verticalSamples_)}};
   }
   return {{"enabled", config_.safeEnabled},
+          {"distance_mode", config_.safeDistanceMode},
           {"configured", configured_},
           {"config_path", loadedConfigPath_.empty()
                                ? displayPath(config_.safeZoneConfig)

@@ -133,6 +133,10 @@ std::string displayPath(const fs::path& path) {
 }
 
 void RuntimeConfig::validate() const {
+  requireChoice("--safe-distance-mode", safeDistanceMode, {"pixel", "depth"});
+  if (safeDistanceMode == "depth" && !isRealSenseSource(source)) {
+    throw std::runtime_error("--safe-distance-mode depth requires --source realsense");
+  }
   requireChoice("--profile", profile,
                 {"custom", "competition", "ui-recording"});
   if (!fs::is_regular_file(weights)) {
@@ -295,6 +299,7 @@ json RuntimeConfig::toJson() const {
       {"stage1_roi_config", displayPath(stage1RoiConfig)},
       {"stage2_area_tolerance", stage2AreaTolerance},
       {"safe_enabled", safeEnabled},
+      {"safe_distance_mode", safeDistanceMode},
       {"safe_zone_config", displayPath(safeZoneConfig)},
       {"safe_stable_seconds", safeStableSeconds},
       {"safe_confidence", safeConfidence},
@@ -451,6 +456,8 @@ ParsedCommandLine parseCommandLine(int argc, char** argv) {
       config.stage1RoiEnabled = false;
     } else if (option == "--stage2-area-tolerance") {
       config.stage2AreaTolerance = floatValue(option, next());
+    } else if (option == "--safe-distance-mode") {
+      config.safeDistanceMode = next();
     } else if (option == "--safe-zone-config") {
       config.safeZoneConfig = expandPath(next());
     } else if (option == "--safe-stable-seconds") {
@@ -619,6 +626,7 @@ Runtime:
   --stage1-roi-config PATH       #7A ROI and #1..#4 pixel-area calibration JSON
   --no-stage1-roi                 disable #7A recognition ROI gating
   --stage2-area-tolerance VALUE  relative area tolerance around #1..#4 mean (default 0.30)
+  --safe-distance-mode MODE      pixel (default) or D455 depth (realsense only)
   --safe-zone-config PATH        obstacle ROI/distance calibration JSON
   --safe-stable-seconds N        legacy diagnostic value; no longer gates /safe
   --safe-confidence VALUE        minimum YOLO obstacle confidence (default 0.25)

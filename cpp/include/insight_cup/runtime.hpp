@@ -74,7 +74,8 @@ class RecognitionRuntime {
   void requestYoloOnUnstableResult(const Stage2Resolution& resolution);
   cv::Mat processFrame(const cv::Mat& frame, int frameIndex,
                        int processedIndex, const std::string& sourceLabel,
-                       std::optional<double> sourceTimeMs);
+                       std::optional<double> sourceTimeMs,
+                       const ObstacleDistanceReader& depthReader = {});
   void drainStage2();
   void writeFinalStage2Event(const FinalStage2Result& result);
   std::optional<std::string> saveCrop(const Stage1Detection& detection,
